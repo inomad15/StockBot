@@ -182,6 +182,8 @@ def execute_real_trade(latest_data, latest_signal):
                     order_quantity = min(base_currency_balance, 0.01)      ###############################
                     # 지정가 주문 가격 설정 (현재 가격보다 0.5% 높은 가격)
                     limit_price = order_price * 1.005
+                    # 1000원 단위로 반올림하여 1000원 단위로 설정
+                    limit_price = round(limit_price / 1000) * 1000
                     # 지정가 매도 주문 실행
                     bithumb.create_limit_sell_order(ticker, order_quantity, limit_price)
                     buy_count = 0  # 매수 횟수 초기화
