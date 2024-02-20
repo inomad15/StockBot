@@ -88,7 +88,7 @@ def IsMarketOpen():
         CheckDict = dict()
 
         #파일 경로입니다.
-        file_path = "/var/autobot/US_Market_OpenCheck.json"
+        file_path = "/var/autotrade/US_Market_OpenCheck.json"
         try:
             with open(file_path, 'r') as json_file:
                 CheckDict = json.load(json_file)

@@ -66,8 +66,8 @@ current_time = convert_to_kst(datetime.datetime.now())
 # 지표값 입력
 signal_window = 5
 best_short_window = 5
-best_long_window = 21
-best_rsi_window = 14
+best_long_window = 20
+best_rsi_window = 10
 
 # MACD 계산 함수
 def calculate_macd(btc_data, best_short_window, best_long_window, signal_window):
@@ -146,9 +146,13 @@ def generate_trading_signals(latest_data, best_short_window, best_long_window, b
 # 전역 변수로 매수 횟수 추적
 buy_count = 0
 
+# 평균 매수 가격과 매수한 총량을 저장할 전역 변수
+average_buy_price = 0
+total_buy_quantity = 0
+
 # 실제 거래를 위한 함수
 def execute_real_trade(latest_data, latest_signal):
-    global buy_count  # 전역 변수 buy_count 사용을 명시
+    global buy_count, average_buy_price, total_buy_quantity  # 전역 변수 사용 
     current_time = datetime.datetime.now(pytz.timezone('Asia/Seoul'))
 
     order_price = latest_data['close']
@@ -159,36 +163,67 @@ def execute_real_trade(latest_data, latest_signal):
             quote_currency = ticker.split('/')[1]  # 예: BTC/KRW에서 KRW를 얻음
             if quote_currency in balance and 'free' in balance[quote_currency]:
                 quote_currency_balance = balance[quote_currency]['free']
-                if quote_currency_balance > order_price * 0.004:  # 매수 가능한 잔고가 있는지 확인
+                if quote_currency_balance > order_price * 0.005:  # 매수 가능한 잔고가 있는지 확인
                     print(f"매수 신호 (KST): 시간 {current_time}, 가격 {order_price}")
                     # 매수 주문 로직
-                    bithumb.create_market_buy_order(ticker, 0.004)     #########################
+                    bithumb.create_market_buy_order(ticker, 0.005)     #########################
                     buy_count += 1  # 매수 횟수 증가
+                    buy_quantity = 0.005  # 매수 수량 (예시 값)
+                    total_cost = average_buy_price * total_buy_quantity
+                    total_cost += buy_quantity * order_price
+                    total_buy_quantity += buy_quantity
+                    average_buy_price = total_cost / total_buy_quantity
                 else:
                     print("매수 가능한 잔고가 부족합니다.")
             else:
                 print("잔고 정보를 가져오는 데 실패했습니다.")
+        
 
 
     elif latest_signal['signal'] == -1:  # 매도 신호가 있는 경우
-            print(f"매도 신호 (KST): 시간 {current_time}, 가격 {order_price}")
+            if order_price >= average_buy_price * 1.01:
+                print(f"매도 신호 (KST): 시간 {current_time}, 가격 {order_price}")
             # 매도 주문 로직
-            balance = bithumb.fetch_balance()
-            base_currency = ticker.split('/')[0]  # 예: BTC/KRW에서 BTC를 얻음
-            if base_currency in balance and 'free' in balance[base_currency]:
-                base_currency_balance = balance[base_currency]['free']
-                if base_currency_balance > 0:
+                balance = bithumb.fetch_balance()
+                base_currency = ticker.split('/')[0]  # 예: BTC/KRW에서 BTC를 얻음
+                if base_currency in balance and 'free' in balance[base_currency]:
+                    base_currency_balance = balance[base_currency]['free']
+                    if base_currency_balance > 0:
                     # 주문량 계산 (전량 매도 또는 0.006 BTC 중 작은 값)
-                    order_quantity = min(base_currency_balance, 0.004)      ###############################
+                        order_quantity = min(base_currency_balance, 0.005)      ###############################
                     # 매도 주문 실행
-                    bithumb.create_market_sell_order(ticker, order_quantity)
-                    buy_count = 0  # 매수 횟수 초기화
-                else:
-                    print("매도할 잔액이 없습니다.")
+                        bithumb.create_market_sell_order(ticker, order_quantity)
+                        buy_count = 0  # 매수 횟수 초기화
+                    else:
+                        print("매도할 잔액이 없습니다.")
             else:
                 print("잔고 정보를 가져오는 데 실패했습니다.")
 
     return current_time
+
+import json
+
+def load_data():
+    try:
+        with open('trade_data.json', 'r') as file:
+            data = json.load(file)
+        # 파일에서 키가 누락된 경우 기본값 설정
+        data.setdefault('buy_count', 0)
+        data.setdefault('average_buy_price', 0)
+        data.setdefault('total_buy_quantity', 0)
+        return data
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {"buy_count": 0, "average_buy_price": 0, "total_buy_quantity": 0}
+
+def save_data(data):
+    with open('trade_data.json', 'w') as file:
+        json.dump(data, file)
+
+# 스크립트 시작 시 데이터 로드
+data = load_data()
+buy_count = data['buy_count']
+average_buy_price = data['average_buy_price']
+total_buy_quantity = data['total_buy_quantity']
 
 # 최신 시장 데이터와 신호를 가져옵니다
 latest_data, latest_signal = update_market_data_and_signals(best_short_window, best_long_window, best_rsi_window, signal_window)
@@ -198,4 +233,5 @@ latest_data, latest_signal = update_market_data_and_signals(best_short_window, b
   
 execute_real_trade(latest_data, latest_signal)
 
-    
+# 스크립트 종료 시 데이터 저장
+save_data({"buy_count": buy_count,"average_buy_price": average_buy_price, "total_buy_quantity": total_buy_quantity})
