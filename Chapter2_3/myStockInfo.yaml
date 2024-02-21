@@ -1,0 +1,26 @@
+#내 실계좌
+REAL_APP_KEY: "PSyfmx36qwxB2foR0UwNbNR7pvdxFvrffPVt"
+REAL_APP_SECRET: "yhNaaWdD7KWl1J54U0Ne4ngY7tiGJ5DRXHRpr5TlMIO9/uRdOfFwd2i8KMu0H9It8IOOZoSj1qA6jN43WgVXD6D7kgWcOLmxWzatQrrBnpHooB5x5VCUdU8tYmLpfcmb2X27+w23PovnqQLkhmYn3VXOOhrk0WgwosjPdACWX+ntmff/Fj4="
+
+#내 실계좌
+REAL_CANO: "68650957"
+REAL_ACNT_PRDT_CD: "01" #상품코드2자리 
+
+REAL_TOKEN_PATH: "/var/autotrade/stock_token_real.json"
+
+REAL_URL: "https://openapi.koreainvestment.com:9443" #서비스
+
+
+
+#모의 계좌 앱키랑 시크릿
+VIRTUAL_APP_KEY: "PS77BREmbE2nABtRB9MBUTmpk66XvBRaweMY"
+VIRTUAL_APP_SECRET: "nsZqbJ7DiHUCPimJDhdlEoFx8b9yRZmwzXkYSpUTZnCOFzUpAxRzZRtqNYa7IQgr4RFCXYVmymmxV3vywD19zfZE2pLCLiPaPsaAo3pfhrC+11M/rIe+SHp/JPPzpv9+Fq9SjiTIIYJTFQMeHTI5dXYBJOM0xfw3sHY5NRqf7m3jbfOHH68="
+
+
+#내 모의 계좌
+VIRTUAL_CANO: "50102039"
+VIRTUAL_ACNT_PRDT_CD: "01" #상품코드2자리 
+
+VIRTUAL_TOKEN_PATH: "/var/autotrade/stock_token_virtual.json"
+
+VIRTUAL_URL: "https://openapivts.koreainvestment.com:29443" #모의투자서비스
