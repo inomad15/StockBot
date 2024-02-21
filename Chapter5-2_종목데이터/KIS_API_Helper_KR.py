@@ -12,6 +12,7 @@ https://drive.google.com/drive/folders/1mKGGR355vmBCxB7A3sOOSh8-gQs1CiMF?usp=dri
 
 변경될 일은 거의 없지만 만의 하나 변경이 이후 생긴다면 수정본은 
 맨 마지막 Outro-2 강의 수업자료에 먼저 반영되니 그 코드를 최종본이라 생각하고 받으시면 됩니다.
+구독이 끝났다면 위 구글 드라이브 링크에서 다운로드 하세요!(실시간 업데이트!)
 
 공통 모듈 중 KIS_Common.py만 클래스 진행하시면 계속 내용이 추가 수정 되며 Outro-2에 최종본이라고 생각하시면 되는데
 다계좌매매를 위해서는 챕터8을 수강하셔서 자신만의 계좌상황에 맞게 수정해야 합니다.
@@ -50,45 +51,6 @@ import time
 import pandas as pd
 
 from pykrx import stock
-
-
-#마켓 상태..이로움님 코드
-def MarketStatus(stock_code = '069500'):
-
-    time.sleep(0.2)
-
-    PATH = "uapi/domestic-stock/v1/quotations/inquire-price"
-    URL = f"{Common.GetUrlBase(Common.GetNowDist())}/{PATH}"
-
-    headers = {
-        "Content-Type" : "application/json",
-        "authorization": f"Bearer {Common.GetToken(Common.GetNowDist())}",
-        "appKey": Common.GetAppKey(Common.GetNowDist()),
-        "appSecret": Common.GetAppSecret(Common.GetNowDist()),
-        "tr_id":"FHKST01010200"
-    }
-
-    params = {
-        "FID_COND_MRKT_DIV_CODE": "J",
-        "FID_INPUT_ISCD": stock_code                          # stock_code: 무조건 주식코드 입력이 필요해서 입력이 없을 경우 KODEX 200의 코드(069500)를 기본으로 사용
-    }
-
-    res = requests.get(URL, headers=headers, params=params)
-
-    if res.status_code == 200 and res.json()["rt_cd"] == '0':
-        output1 = res.json()['output1']
-        #output2 = res.json()['output2']                     # 동시호가 신호가 필요할 경우
-
-        result = {
-            'Status': output1['new_mkop_cls_code'][0],     # '','1' : 장개시전,  '2' : 장중,  '3' : 장종료후,  '4' : 시간외단일가,  '0' : 동시호가(개장전,개장후)
-        }
-
-        return result
-    else:
-        print("Error Code : " + str(res.status_code) + " | " + res.text)
-        return res.json()["msg_cd"]
-    
-
 
 
 
@@ -152,9 +114,7 @@ def IsMarketOpen():
 
     now_time = datetime.now(timezone('Asia/Seoul'))
     pprint.pprint(now_time)
-    strNow = now_time.strftime('%Y/%m/%d')
-    
-    
+
     date_week = now_time.weekday()
 
     IsOpen = False
@@ -173,118 +133,47 @@ def IsMarketOpen():
     #평일 장 시간이어도 공휴일같은날 장이 안열린다.
     if IsOpen == True:
         
+
         print("Time is OK... but one more checked!!!")
-        
-        
-        Is_CheckTody = False
 
-
-        CheckDict = dict()
-
-        #파일 경로입니다.
-        file_path = "./KR_Market_OpenCheck.json"
+        result = ""
+        NowDist = Common.GetNowDist() 
         try:
-            with open(file_path, 'r') as json_file:
-                CheckDict = json.load(json_file)
+            #가상 계좌면 메세지 통일을 위해 실계좌에서 가짜 주문 취소 주문을 넣는다!
+            if Common.GetNowDist() == "VIRTUAL":
+
+                Common.SetChangeMode("REAL")
+                result = MakeSellLimitOrder("069500",1,1,"CHECK")
+                Common.SetChangeMode("VIRTUAL")
+
+            else:
+                result = MakeSellLimitOrder("069500",1,1,"CHECK")
 
         except Exception as e:
-            print("Exception by First")
+            Common.SetChangeMode(NowDist)
+            print("EXCEPTION ",e)
 
 
-        #만약 키가 존재 하지 않는다 즉 아직 한번도 체크하지 않은 상황
-        if CheckDict.get("CheckTody") == None:
 
-            Is_CheckTody = True
+        #장운영시간이 아니라고 리턴되면 장이 닫힌거다!
+        if result == "APBK0918" or result == "APBK0919" or IsTodayOpenCheck() == 'N':
+            print("Market is Close!!")
             
+            return False
+        #아니라면 열린거다
         else:
-      
-            #날짜가 바뀌었다면 체크 해야 한다!
-            if CheckDict['CheckTody'] != strNow:
-                Is_CheckTody = True
 
+            if result == "EGW00123":
+                print("Token is failed...So You need Action!!")
 
-        Is_Ok = False
-        if Is_CheckTody == True:
-            
-            
-            
-            #NowDist = Common.GetNowDist() 
-            try:
-
-                #시간 정보를 읽는다
-                time_info = time.gmtime()
-
-
-                day_n = time_info.tm_mday
-                df = Common.GetOhlcv("KR", "005930",10) 
-                date = df.iloc[-1].name
-
-                #날짜 정보를 획득
-                date_format = "%Y-%m-%d %H:%M:%S"
-                date_object = None
-
-                try:
-                    date_object = datetime.strptime(str(date), date_format)
-
-                except Exception as e:
-                    try:
-                        date_format = "%Y%m%d"
-                        date_object = datetime.strptime(str(date), date_format)
-
-                    except Exception as e2:
-                        date_format = "%Y-%m-%d"
-                        date_object = datetime.strptime(str(date), date_format)
-                        
-                if int(date_object.strftime("%d")) == day_n:
-                    Is_Ok = True
-
-
-            except Exception as e:
-                #Common.SetChangeMode(NowDist)
-                print("EXCEPTION ",e)
-
-
-            market = MarketStatus()
-            pprint.pprint(market)
-
-            IsJangJung = False
-            if (market['Status'] == '2'):
-                IsJangJung = True
-                
-            
-
-            #장운영시간이 아니라고 리턴되면 장이 닫힌거다!
-            if IsTodayOpenCheck() == 'N' or IsJangJung == False:
-                print("Market is Close!!")
-                
-                return False
-            #아니라면 열린거다
-            else:
-
-                if Is_Ok == True:
-                    
-
-                    #마켓이 열린 시간내에 가짜주문이 유효하다면 장이 열렸으니 더이상 이 시간내에 또 체크할 필요가 없다.
-                    CheckDict['CheckTody'] = strNow
-                    with open(file_path, 'w') as outfile:
-                        json.dump(CheckDict, outfile)
-
-
-                    print("Market is Open!!!!")
-                    return True
-                else:
-                    print("Market is Close!!")
-                
-                    return False
-        else:
-            print("Market is Open (Already Checked)!!!!")
+            print("Market is Open!!")
             return True
+
     else:
 
         print("Time is NO!!!")     
            
         return False
-
 
 
 #price_pricision 호가 단위에 맞게 변형해준다. 지정가 매매시 사용

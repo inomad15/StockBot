@@ -51,7 +51,7 @@ import yfinance
 stock_info = None
 
 #설정 파일 정보를 읽어 옵니다.
-with open('/var/autotrade/myStockInfo.yaml', encoding='UTF-8') as f:
+with open('/var/autobot/myStockInfo.yaml', encoding='UTF-8') as f:
     stock_info = yaml.load(f, Loader=yaml.FullLoader)
     
     
@@ -716,7 +716,7 @@ def SaveAutoLimitDoAgainData(AutoLimitData):
 
 
     #파일 경로입니다.
-    auto_order_file_path = "/var/autotrade/" + AutoLimitData['Area'] + "_" + AutoLimitData['NowDist'] + "_" + AutoLimitData['BotName'] + "AutoOrderList.json"
+    auto_order_file_path = "/var/autobot/" + AutoLimitData['Area'] + "_" + AutoLimitData['NowDist'] + "_" + AutoLimitData['BotName'] + "AutoOrderList.json"
 
     #이렇게 랜덤하게 쉬어줘야 혹시나 있을 중복 파일 접근 방지!
     time.sleep(random.random()*0.1)
@@ -741,7 +741,7 @@ def SaveAutoLimitDoAgainData(AutoLimitData):
     #봇마다 고유한 경로(자동주문리스트 파일의 경로)를 1개씩 저장해 둔다
     #이를 for문 돌면 전체 모든 봇의 자동주문 리스트에 접근해서 처리할 수 있다
     time.sleep(random.random()*0.1)
-    bot_path_file_path = "/var/autotrade/BotOrderListPath.json"
+    bot_path_file_path = "/var/autobot/BotOrderListPath.json"
     BotOrderPathList = list()
     try:
         with open(bot_path_file_path, 'r') as json_file:
@@ -773,7 +773,7 @@ def SaveAutoLimitDoAgainData(AutoLimitData):
 #주문 아이디를 받아 해당 주문을 취소하는 로직
 def DelAutoLimitOrder(AutoOrderId):
 
-    bot_path_file_path = "/var/autotrade/BotOrderListPath.json"
+    bot_path_file_path = "/var/autobot/BotOrderListPath.json"
 
     #각 봇 별로 들어가 있는 자동 주문 리스트!!!
     BotOrderPathList = list()
@@ -898,7 +898,7 @@ def DelAutoLimitOrder(AutoOrderId):
 #해당 봇의 모든 주문데이터를 취소하는 로직!
 def AllDelAutoLimitOrder(bot_name):
 
-    bot_path_file_path = "/var/autotrade/BotOrderListPath.json"
+    bot_path_file_path = "/var/autobot/BotOrderListPath.json"
 
     #각 봇 별로 들어가 있는 자동 주문 리스트!!!
     BotOrderPathList = list()
