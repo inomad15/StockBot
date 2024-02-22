@@ -142,14 +142,6 @@ def generate_trading_signals(latest_data, best_short_window, best_long_window, b
     signals['positions'] = signals['signal'].diff()
     return signals
 
-
-# 전역 변수로 매수 횟수 추적
-buy_count = 0
-
-# 평균 매수 가격과 매수한 총량을 저장할 전역 변수
-average_buy_price = 0
-total_buy_quantity = 0
-
 # 실제 거래를 위한 함수
 def execute_real_trade(latest_data, latest_signal):
     global buy_count, average_buy_price, total_buy_quantity  # 전역 변수 사용 
@@ -193,7 +185,7 @@ def execute_real_trade(latest_data, latest_signal):
                         order_quantity = min(base_currency_balance, 0.005)      ###############################
                     # 매도 주문 실행
                         bithumb.create_market_sell_order(ticker, order_quantity)
-                        buy_count = 0  # 매수 횟수 초기화
+                        buy_count -= 1  # 매수 횟수 감소
                     else:
                         print("매도할 잔액이 없습니다.")
             else:
@@ -218,6 +210,9 @@ def load_data():
 def save_data(data):
     with open('trade_data.json', 'w') as file:
         json.dump(data, file)
+
+# 전역 변수 선언
+global buy_count, average_buy_price, total_buy_quantity
 
 # 스크립트 시작 시 데이터 로드
 data = load_data()
