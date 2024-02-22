@@ -1,4 +1,5 @@
 import datetime
+import time
 import pytz
 import pandas as pd
 import ccxt
@@ -74,6 +75,7 @@ def get_ma(btc_data,period,st):
     close = btc_data["close"]
     ma = close.rolling(period).mean()
     return float(ma.iloc[st])
+
         
 # MACD 계산 함수
 def calculate_macd(btc_data, best_short_window, best_long_window, signal_window):
@@ -130,6 +132,7 @@ def update_market_data_and_signals(best_short_window, best_long_window, best_rsi
     return latest_data, latest_signal
 
 
+# 매매신호 계산
 def generate_trading_signals(latest_data, best_short_window, best_long_window, best_rsi_window, signal_window):
     macd, signal = calculate_macd(latest_data, best_short_window, best_long_window,signal_window)
     rsi = calculate_rsi(latest_data, best_rsi_window)
@@ -217,32 +220,36 @@ def save_data(data):
     with open('trade_data.json', 'w') as file:
         json.dump(data, file)
 
-# 전역 변수 선언
-global buy_count, average_buy_price, total_buy_quantity
 
-# 스크립트 시작 시 데이터 로드
-data = load_data()
-buy_count = data['buy_count']
-average_buy_price = data['average_buy_price']
-total_buy_quantity = data['total_buy_quantity']
+while True:
+    # 전역 변수 선언
+    global buy_count, average_buy_price, total_buy_quantity
 
-# 분봉 기준 5일선 계산
-ma5_before3 = get_ma(btc_data,5,-4)
-ma5_before2 = get_ma(btc_data,5,-3)
-ma5_now = get_ma(btc_data,5,-2)
+    # 스크립트 시작 시 데이터 로드
+    data = load_data()
+    buy_count = data['buy_count']
+    average_buy_price = data['average_buy_price']
+    total_buy_quantity = data['total_buy_quantity']
+    
+    # 분봉 기준 5일선 계산
+    ma5_before3 = get_ma(btc_data,5,-4)
+    ma5_before2 = get_ma(btc_data,5,-3)
+    ma5_now = get_ma(btc_data,5,-2)
 
-# 분봉 기준 20일선 계산
-ma20 = get_ma(btc_data,20,-2)
+    # 분봉 기준 20일선 계산
+    ma20 = get_ma(btc_data,20,-2)
+    
+    print("ma20 :", ma20)
+    print("ma5 :", ma5_before3, "->", ma5_before2, "->", ma5_now)
 
-print("ma20 :", ma20)
-print("ma5 :", ma5_before3, "->", ma5_before2, "->", ma5_now)
+    # 최신 시장 데이터와 신호를 가져옵니다
+    latest_data, latest_signal = update_market_data_and_signals(best_short_window, best_long_window, best_rsi_window, signal_window)
 
-# 최신 시장 데이터와 신호를 가져옵니다
-latest_data, latest_signal = update_market_data_and_signals(best_short_window, best_long_window, best_rsi_window, signal_window)
+    print(f"시간 (KST): {current_time}, 종가: {latest_data['close']:.0f}, MACD: {latest_data['macd']:.0f}, MACD 신호: {latest_data['macd_signal']:.0f}, k_line: {latest_data['k_line']:.0f}, d_line: {latest_data['d_line']:.0f}, RSI: {latest_data['rsi']:.0f}")
+    
+    execute_real_trade(latest_data, latest_signal)
 
-print(f"시간 (KST): {current_time}, 종가: {latest_data['close']:.0f}, MACD: {latest_data['macd']:.0f}, MACD 신호: {latest_data['macd_signal']:.0f}, k_line: {latest_data['k_line']:.0f}, d_line: {latest_data['d_line']:.0f}, RSI: {latest_data['rsi']:.0f}")
-  
-execute_real_trade(latest_data, latest_signal)
-
-# 스크립트 종료 시 데이터 저장
-save_data({"buy_count": buy_count,"average_buy_price": average_buy_price, "total_buy_quantity": total_buy_quantity})
+    # 스크립트 종료 시 데이터 저장
+    save_data({"buy_count": buy_count,"average_buy_price": average_buy_price, "total_buy_quantity": total_buy_quantity})
+    
+    time.sleep(180)
