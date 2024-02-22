@@ -1,24 +1,5 @@
 #-*-coding:utf-8 -*-
-'''
-myUpbit.py 최종 버전은 챕터 11-3 (폭락하면 감사! 업비트 현물 장기 투자 봇! 모아 봇 만들기!)의 수업자료 탭에서 다운로드 가능하니 참고하세요!
 
-하다가 잘 안되시면 계속 내용이 추가되고 있는 아래 FAQ를 꼭꼭 체크하시고
-
-주식/코인 자동매매 FAQ
-https://blog.naver.com/zacra/223203988739
-
-그래도 안 된다면 구글링 해보시고
-그래도 모르겠다면 클래스 댓글, 블로그 댓글, 단톡방( https://blog.naver.com/zacra/223111402375 )에 질문주세요! ^^
-
-클래스 제작 완료 후 많은 시간이 흘렀고 그 사이 전략에 많은 발전이 있었습니다.
-제가 직접 투자하고자 백테스팅으로 검증하여 더 안심하고 있는 자동매매 전략들을 블로그에 공개하고 있으니
-완강 후 꼭 블로그&유튜브 심화 과정에 참여해 보세요! 기다릴께요!!
-
-아래 빠른 자동매매 가이드 시간날 때 완독하시면 방향이 잡히실 거예요!
-https://blog.naver.com/zacra/223086628069
-
-  
-'''
 import pyupbit
 import time
 import pandas as pd
@@ -26,9 +7,6 @@ import numpy
 
 from cryptography.fernet import Fernet
 
-'''
-여기에 업비트 봇에 사용될 함수들을 추가하세요!!
-'''
 #암호화 복호화 클래스
 class SimpleEnDecrypt:
     def __init__(self, key=None):
@@ -94,9 +72,6 @@ def GetBB(ohlcv,period,st):
     dic_bb['lower'] = float(bb_center - band1)
 
     return dic_bb
-
-
-
 
 
 #거래대금이 많은 순으로 코인 리스트를 얻는다. 첫번째 : Interval기간(day,week,minute15 ....), 두번째 : 몇개까지 
