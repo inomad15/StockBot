@@ -51,7 +51,7 @@ bithumb = ccxt.bithumb({
 
 # 종목, 차트기간 설정
 ticker = 'BTC/KRW'                                                                       ###########################
-timeframe = '1m'                                                                         ###########################
+timeframe = '3m'                                                                         ###########################
 since = bithumb.parse8601('2022-01-01T00:00:00Z')
 limit = 50000
 
@@ -64,11 +64,17 @@ current_time = convert_to_kst(datetime.datetime.now())
 
 
 # 지표값 입력
-signal_window = 5
-best_short_window = 5
-best_long_window = 20
-best_rsi_window = 10
+signal_window = 9
+best_short_window = 12
+best_long_window = 26
+best_rsi_window = 14
 
+# 이동평균선 계산함수 : (분봉/일봉 정보, 기간, 날짜)
+def get_ma(btc_data,period,st):
+    close = btc_data["close"]
+    ma = close.rolling(period).mean()
+    return float(ma.iloc[st])
+        
 # MACD 계산 함수
 def calculate_macd(btc_data, best_short_window, best_long_window, signal_window):
     short_ema = btc_data['close'].ewm(span=best_short_window, adjust=False).mean()
@@ -104,10 +110,10 @@ def fetch_ohlcv(ticker, timeframe, since, limit):
     df.set_index('timestamp', inplace=True)
     return df
 
-# 데이터 가져오기
+# 데이터 준비하기
 btc_data = fetch_ohlcv(ticker, timeframe, since, limit)
 
-# 최신 시장 데이터를 가져오고 매매 신호를 계산하는 함수
+# 최신 시장 데이터 가져오기
 def update_market_data_and_signals(best_short_window, best_long_window, best_rsi_window, signal_window):
     btc_data = fetch_ohlcv(ticker, timeframe, since, limit)
     macd, macd_signal = calculate_macd(btc_data, best_short_window, best_long_window, signal_window)
@@ -120,12 +126,21 @@ def update_market_data_and_signals(best_short_window, best_long_window, best_rsi
     btc_data['d_line'] = d_line
     trading_signals = generate_trading_signals(btc_data, best_short_window, best_long_window, best_rsi_window,signal_window )
     latest_data = btc_data.iloc[-1]
-    late2_data = btc_data.iloc[-2]
-    late3_data = btc_data.iloc[-3]
     latest_signal = trading_signals.iloc[-1]
     return latest_data, latest_signal
 
+# 30분봉 기준 5일선 계산
+ma5_before3 = get_ma(btc_data,5,-4)
+ma5_before2 = get_ma(btc_data,5,-3)
+ma5_now = get_ma(btc_data,5,-2)
 
+# 30분봉 기준 20일선 계산
+ma20 = get_ma(btc_data,20,-2)
+
+print("ma20 :", ma20)
+print("ma5 :", ma5_before3, "->", ma5_before2, "->", ma5_now)
+
+# 매매신호 계산
 def generate_trading_signals(latest_data, best_short_window, best_long_window, best_rsi_window, signal_window):
     macd, signal = calculate_macd(latest_data, best_short_window, best_long_window,signal_window)
     rsi = calculate_rsi(latest_data, best_rsi_window)
@@ -137,10 +152,10 @@ def generate_trading_signals(latest_data, best_short_window, best_long_window, b
     latest_data['d_line'] = d_line
     signals = pd.DataFrame(index=latest_data.index)
     signals['signal'] = 0.0
-    signals.loc[(latest_data['macd'] > latest_data['macd_signal']) & (latest_data['k_line'] > latest_data['d_line']) 
-                 & (latest_data['k_line'] < 50) & (latest_data['rsi'] < 50), 'signal'] = 1.0  # 매수 신호     #####################
-    signals.loc[(latest_data['macd'] < latest_data['macd_signal']) & (latest_data['k_line'] < latest_data['d_line']) 
-                 & (latest_data['k_line'] > 60) & (latest_data['rsi'] > 50), 'signal'] = -1.0  # 매도 신호    #####################
+    signals.loc[(ma5_now < ma20) & (ma5_before3 > ma5_before2) & (ma5_before2 < ma5_now) 
+                 & (latest_data['k_line'] < 30) & (latest_data['rsi'] < 50), 'signal'] = 1.0  # 매수 신호     #####################
+    signals.loc[(ma5_now > ma20) & (ma5_before3 < ma5_before2) & (ma5_before2 > ma5_now) 
+                 & (latest_data['d_line'] > 70) & (latest_data['rsi'] > 50), 'signal'] = -1.0  # 매도 신호    #####################
     signals['positions'] = signals['signal'].diff()
     return signals
 
@@ -213,8 +228,6 @@ def save_data(data):
     with open('trade_data.json', 'w') as file:
         json.dump(data, file)
 
-
-
 # 전역 변수 선언
 global buy_count, average_buy_price, total_buy_quantity
 
@@ -226,17 +239,10 @@ total_buy_quantity = data['total_buy_quantity']
 
 # 최신 시장 데이터와 신호를 가져옵니다
 latest_data, latest_signal = update_market_data_and_signals(best_short_window, best_long_window, best_rsi_window, signal_window)
-late2_data = update_market_data_and_signals(best_short_window, best_long_window, best_rsi_window, signal_window)
 
 print(f"시간 (KST): {current_time}, 종가: {latest_data['close']:.0f}, MACD: {latest_data['macd']:.0f}, MACD 신호: {latest_data['macd_signal']:.0f}, k_line: {latest_data['k_line']:.0f}, d_line: {latest_data['d_line']:.0f}, RSI: {latest_data['rsi']:.0f}")
-latest_data, latest_signal = update_market_data_and_signals(best_short_window, best_long_window, best_rsi_window, signal_window)
   
 execute_real_trade(latest_data, latest_signal)
 
 # 스크립트 종료 시 데이터 저장
 save_data({"buy_count": buy_count,"average_buy_price": average_buy_price, "total_buy_quantity": total_buy_quantity})
-
-
-
-print("latest data :", latest_data)
-print("late2 data :", late2_data)
