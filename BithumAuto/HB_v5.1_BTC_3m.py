@@ -1,5 +1,4 @@
 import datetime
-import time
 import pytz
 import pandas as pd
 import ccxt
@@ -64,45 +63,50 @@ def convert_to_kst(time):
 current_time = convert_to_kst(datetime.datetime.now())
 
 
-# 지표값 입력
-signal_window = 9
-best_short_window = 12
-best_long_window = 26
-best_rsi_window = 14
-
 # 이동평균선 계산함수 : (분봉/일봉 정보, 기간, 날짜)
 def get_ma(btc_data,period,st):
     close = btc_data["close"]
     ma = close.rolling(period).mean()
     return float(ma.iloc[st])
-
         
 # MACD 계산 함수
-def calculate_macd(btc_data, best_short_window, best_long_window, signal_window):
-    short_ema = btc_data['close'].ewm(span=best_short_window, adjust=False).mean()
-    long_ema = btc_data['close'].ewm(span=best_long_window, adjust=False).mean()
-    macd = short_ema - long_ema
-    signal = macd.ewm(span=signal_window, adjust=False).mean()
-    return macd, signal
+def get_macd(btc_data,st):
+    macd_short, macd_long, macd_signal=12,26,9
+
+    btc_data["MACD_short"]=btc_data["close"].ewm(span=macd_short).mean()
+    btc_data["MACD_long"]=btc_data["close"].ewm(span=macd_long).mean()
+    btc_data["MACD"]=btc_data["MACD_short"] - btc_data["MACD_long"]
+    btc_data["MACD_signal"]=btc_data["MACD"].ewm(span=macd_signal).mean() 
+
+    return btc_data["MACD"].iloc[st], btc_data["MACD_signal"].iloc[st]
 
 # RSI 계산 함수
-def calculate_rsi(btc_data, best_rsi_window):
-    delta = btc_data['close'].diff()
-    up = delta.clip(lower=0)
-    down = -1 * delta.clip(upper=0)
-    ema_up = up.ewm(com=best_rsi_window-1, adjust=False).mean()
-    ema_down = down.ewm(com=best_rsi_window-1, adjust=False).mean()
-    rs = ema_up / ema_down
-    rsi = 100 - (100 / (1 + rs))
-    return rsi
+def get_rsi(btc_data, period, st):
+    btc_data["close"] = btc_data["close"]
+    delta = btc_data["close"].diff()
+    up, down = delta.copy(), delta.copy()
+    up[up < 0] = 0
+    down[down > 0] = 0
+    _gain = up.ewm(com=(period - 1), min_periods=period).mean()
+    _loss = down.abs().ewm(com=(period - 1), min_periods=period).mean()
+    RS = _gain / _loss
+    return float(pd.Series(100 - (100 / (1 + RS)), name="RSI").iloc[st])
 
 # 스토캐스틱 계산 함수
-def calculate_stochastic(btc_data, k_window=14, d_window=3):
-    low_min = btc_data['low'].rolling(window=k_window).min()
-    high_max = btc_data['high'].rolling(window=k_window).max()
-    k_line = ((btc_data['close'] - low_min) / (high_max - low_min)) * 100
-    d_line = k_line.rolling(window=d_window).mean()
-    return k_line, d_line
+def get_sto(btc_data,period,st):
+
+    stoch = dict()
+
+    ndays_high = btc_data['high'].rolling(window=period, min_periods=1).max()
+    ndays_low = btc_data['low'].rolling(window=period, min_periods=1).min()
+    fast_k = (btc_data['close'] - ndays_low)/(ndays_high - ndays_low)*100
+    slow_d = fast_k.rolling(window=3, min_periods=1).mean()
+
+    stoch['fast_k'] = fast_k.iloc[st]
+    stoch['slow_d'] = slow_d.iloc[st]
+
+    return fast_k.iloc[st], slow_d.iloc[st]
+
 
 # OHLCV 데이터를 가져오는 함수
 def fetch_ohlcv(ticker, timeframe, since, limit):
@@ -112,53 +116,76 @@ def fetch_ohlcv(ticker, timeframe, since, limit):
     df.set_index('timestamp', inplace=True)
     return df
 
-# 데이터 준비하기
+# 데이터 준비하기 ##############################################################################
+
 btc_data = fetch_ohlcv(ticker, timeframe, since, limit)
 
-# 최신 시장 데이터 가져오기
-def update_market_data_and_signals(best_short_window, best_long_window, best_rsi_window, signal_window):
-    btc_data = fetch_ohlcv(ticker, timeframe, since, limit)
-    macd, macd_signal = calculate_macd(btc_data, best_short_window, best_long_window, signal_window)
-    rsi = calculate_rsi(btc_data, best_rsi_window)
-    k_line, d_line = calculate_stochastic(btc_data)
-    btc_data['macd'] = macd
-    btc_data['macd_signal'] = macd_signal
-    btc_data['rsi'] = rsi
+'''
+# btc_data의 컬럼 확인 (디버깅 목적)
+print(btc_data.columns)
+'''
+
+# 이동평균 계산
+ma5_before3 = get_ma(btc_data,5,-4)
+ma5_before2 = get_ma(btc_data,5,-3)
+ma5_now = get_ma(btc_data,5,-2)
+ma20 = get_ma(btc_data,20,-2)
+
+# MACD 계산
+macd_before3, macd_s_before3 = get_macd(btc_data, -4)
+macd_before2, macd_s_before2 = get_macd(btc_data, -3)
+macd_now, macd_s_now = get_macd(btc_data, -2)
+
+# 스토캐스틱 계산
+fast_k_before3, slow_d_before3 = get_sto(btc_data, 14, -4)
+fast_k_before2, slow_d_before2 = get_sto(btc_data, 14, -3)
+fast_k_now, slow_d_now = get_sto(btc_data, 14, -2)
+
+k_line = fast_k_now
+d_line = slow_d_now
+
+btc_data['rsi'] = get_rsi(btc_data, 14, -2)
+
+# RSI 계산
+rsi_before3 = get_rsi(btc_data, 14, -4)
+rsi_before2 = get_rsi(btc_data, 14, -3)
+rsi_now = get_rsi(btc_data, 14, -2)
+
+##############################################################################################
+
+# 매매신호 함수
+def generate_trading_signals(btc_data, ma5_now, ma5_before2, ma5_before3, ma20):
+    # MACD와 RSI 계산
+    macd_value, macd_signal_value = get_macd(btc_data, -2)
+    rsi_now = get_rsi(btc_data, 14, -2)
+    btc_data['rsi'] = rsi_now
+    
+    # 스토캐스틱 계산
+    k_line, d_line = get_sto(btc_data, 14, -2)
     btc_data['k_line'] = k_line
     btc_data['d_line'] = d_line
-    trading_signals = generate_trading_signals(btc_data, best_short_window, best_long_window, best_rsi_window,signal_window )
-    latest_data = btc_data.iloc[-1]
-    latest_signal = trading_signals.iloc[-1]
-    return latest_data, latest_signal
 
-
-# 매매신호 계산
-def generate_trading_signals(latest_data, best_short_window, best_long_window, best_rsi_window, signal_window):
-    macd, signal = calculate_macd(latest_data, best_short_window, best_long_window,signal_window)
-    rsi = calculate_rsi(latest_data, best_rsi_window)
-    k_line, d_line = calculate_stochastic(latest_data)
-    latest_data['macd'] = macd
-    latest_data['macd_signal'] = signal
-    latest_data['rsi'] = rsi
-    latest_data['k_line'] = k_line
-    latest_data['d_line'] = d_line
-    signals = pd.DataFrame(index=latest_data.index)
+    # 매매 신호 생성
+    signals = pd.DataFrame(index=btc_data.index)
     signals['signal'] = 0.0
     signals.loc[(ma5_now < ma20) & (ma5_before3 > ma5_before2) & (ma5_before2 < ma5_now) 
-                 & (latest_data['k_line'] < 30) & (latest_data['rsi'] < 50), 'signal'] = 1.0  # 매수 신호     #####################
+                 & (btc_data['rsi'] < 50), 'signal'] = 1.0  # 매수 신호     #####################
     signals.loc[(ma5_now > ma20) & (ma5_before3 < ma5_before2) & (ma5_before2 > ma5_now) 
-                 & (latest_data['d_line'] > 70) & (latest_data['rsi'] > 50), 'signal'] = -1.0  # 매도 신호    #####################
+                 & (btc_data['rsi'] > 50), 'signal'] = -1.0  # 매도 신호    #####################
     signals['positions'] = signals['signal'].diff()
     return signals
 
+signals = generate_trading_signals(btc_data, ma5_now, ma5_before2, ma5_before3, ma20)
+
 # 실제 거래를 위한 함수
-def execute_real_trade(latest_data, latest_signal):
+def execute_real_trade(btc_data, signals):
     global buy_count, average_buy_price, total_buy_quantity  # 전역 변수 사용 
     current_time = datetime.datetime.now(pytz.timezone('Asia/Seoul'))
 
-    order_price = latest_data['close']
+    order_price = btc_data['close'].iloc[-1]
+    last_signal = signals['signal'].iloc[-1]
 
-    if latest_signal['signal'] == 1 and buy_count < 6:  # 매수 신호가 있고, 매수 횟수가 6회 미만인 경우
+    if last_signal == 1 and buy_count < 6:  # 매수 신호가 있고, 매수 횟수가 6회 미만인 경우
             # 잔고 확인 로직 추가
             balance = bithumb.fetch_balance()
             quote_currency = ticker.split('/')[1]  # 예: BTC/KRW에서 KRW를 얻음
@@ -167,7 +194,7 @@ def execute_real_trade(latest_data, latest_signal):
                 if quote_currency_balance > order_price * 0.005:  # 매수 가능한 잔고가 있는지 확인
                     print(f"매수 신호 (KST): 시간 {current_time}, 가격 {order_price}")
                     # 매수 주문 로직
-                    bithumb.create_market_buy_order(ticker, 0.005)     #########################
+                    #bithumb.create_market_buy_order(ticker, 0.005)     #########################
                     buy_count += 1  # 매수 횟수 증가
                     buy_quantity = 0.005  # 매수 수량 (예시 값)
                     total_cost = average_buy_price * total_buy_quantity
@@ -180,8 +207,7 @@ def execute_real_trade(latest_data, latest_signal):
                 print("잔고 정보를 가져오는 데 실패했습니다.")
         
 
-
-    elif latest_signal['signal'] == -1:  # 매도 신호가 있는 경우
+    elif last_signal == -1:  # 매도 신호가 있는 경우
             if order_price >= average_buy_price * 1.01:
                 print(f"매도 신호 (KST): 시간 {current_time}, 가격 {order_price}")
             # 매도 주문 로직
@@ -193,7 +219,7 @@ def execute_real_trade(latest_data, latest_signal):
                     # 주문량 계산 (전량 매도 또는 0.006 BTC 중 작은 값)
                         order_quantity = min(base_currency_balance, 0.005)      ###############################
                     # 매도 주문 실행
-                        bithumb.create_market_sell_order(ticker, order_quantity)
+                        #bithumb.create_market_sell_order(ticker, order_quantity)
                         buy_count -= 1  # 매수 횟수 감소
                     else:
                         print("매도할 잔액이 없습니다.")
@@ -202,6 +228,7 @@ def execute_real_trade(latest_data, latest_signal):
 
     return current_time
 
+# 거래기록 파일생성
 import json
 
 def load_data():
@@ -220,36 +247,28 @@ def save_data(data):
     with open('trade_data.json', 'w') as file:
         json.dump(data, file)
 
+# 전역 변수 선언
+global buy_count, average_buy_price, total_buy_quantity
 
-while True:
-    # 전역 변수 선언
-    global buy_count, average_buy_price, total_buy_quantity
+# 스크립트 시작 시 데이터 로드
+data = load_data()
+buy_count = data['buy_count']
+average_buy_price = data['average_buy_price']
+total_buy_quantity = data['total_buy_quantity']
 
-    # 스크립트 시작 시 데이터 로드
-    data = load_data()
-    buy_count = data['buy_count']
-    average_buy_price = data['average_buy_price']
-    total_buy_quantity = data['total_buy_quantity']
-    
-    # 분봉 기준 5일선 계산
-    ma5_before3 = get_ma(btc_data,5,-4)
-    ma5_before2 = get_ma(btc_data,5,-3)
-    ma5_now = get_ma(btc_data,5,-2)
+# 최신 시장 데이터와 신호를 가져옵니다
 
-    # 분봉 기준 20일선 계산
-    ma20 = get_ma(btc_data,20,-2)
-    
-    print("ma20 :", ma20)
-    print("ma5 :", ma5_before3, "->", ma5_before2, "->", ma5_now)
+print(f"시간 (KST): {current_time}, 종가: {btc_data['close'].iloc[-2]:.0f}, MACD: {btc_data['MACD'].iloc[-2]:.0f}, MACD 신호: {btc_data['MACD_signal'].iloc[-2]:.0f}, k_line: {btc_data['k_line'].iloc[-2]:.0f}, d_line: {btc_data['d_line'].iloc[-2]:.0f}, RSI: {btc_data['rsi'].iloc[-2]:.0f}")
+  
+execute_real_trade(btc_data, signals)
 
-    # 최신 시장 데이터와 신호를 가져옵니다
-    latest_data, latest_signal = update_market_data_and_signals(best_short_window, best_long_window, best_rsi_window, signal_window)
 
-    print(f"시간 (KST): {current_time}, 종가: {latest_data['close']:.0f}, MACD: {latest_data['macd']:.0f}, MACD 신호: {latest_data['macd_signal']:.0f}, k_line: {latest_data['k_line']:.0f}, d_line: {latest_data['d_line']:.0f}, RSI: {latest_data['rsi']:.0f}")
-    
-    execute_real_trade(latest_data, latest_signal)
+print("ma20 :", ma20)
+print("ma5 :", ma5_before3, "->", ma5_before2, "->", ma5_now)
+print("macd_value :", macd_before3, "->", macd_before2, "->", macd_now)
+print("macd_signal_value :", macd_s_before3, "->", macd_s_before2, "->", macd_s_now)
+print("stoch_k :", fast_k_before3)
 
-    # 스크립트 종료 시 데이터 저장
-    save_data({"buy_count": buy_count,"average_buy_price": average_buy_price, "total_buy_quantity": total_buy_quantity})
-    
-    time.sleep(180)
+
+# 스크립트 종료 시 데이터 저장
+save_data({"buy_count": buy_count,"average_buy_price": average_buy_price, "total_buy_quantity": total_buy_quantity})
