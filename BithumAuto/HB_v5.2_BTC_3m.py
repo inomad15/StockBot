@@ -118,7 +118,8 @@ def fetch_ohlcv(ticker, timeframe, since, limit):
 
 # 데이터 준비하기 ##############################################################################
 
-btc_data = fetch_ohlcv(ticker, timeframe, since, limit)
+df = fetch_ohlcv(ticker, timeframe, since, limit)
+btc_data = df
 
 '''
 # btc_data의 컬럼 확인 (디버깅 목적)
@@ -168,10 +169,10 @@ def generate_trading_signals(btc_data, ma5_now, ma5_before2, ma5_before3, ma20):
     # 매매 신호 생성
     signals = pd.DataFrame(index=btc_data.index)
     signals['signal'] = 0.0
-    signals.loc[(ma5_now < ma20) & (ma5_before3 > ma5_before2) & (ma5_before2 < ma5_now) 
-                 & (btc_data['rsi'] < 50), 'signal'] = 1.0  # 매수 신호     #####################
-    signals.loc[(ma5_now > ma20) & (ma5_before3 < ma5_before2) & (ma5_before2 > ma5_now) 
-                 & (btc_data['rsi'] > 50), 'signal'] = -1.0  # 매도 신호    #####################
+    signals.loc[(ma5_now < ma20) & (ma5_before3 > ma5_before2) & (ma5_before2 < ma5_now) & (btc_data['d_line'] < 30)
+                 & (btc_data['rsi'] < 40), 'signal'] = 1.0  # 매수 신호     #####################
+    signals.loc[(ma5_now > ma20) & (ma5_before3 < ma5_before2) & (ma5_before2 > ma5_now) & (btc_data['d_line'] > 70)
+                 & (btc_data['rsi'] > 60), 'signal'] = -1.0  # 매도 신호    #####################
     signals['positions'] = signals['signal'].diff()
     return signals
 
@@ -262,13 +263,13 @@ print(f"시간 (KST): {current_time}, 종가: {btc_data['close'].iloc[-2]:.0f}, 
   
 execute_real_trade(btc_data, signals)
 
-
 print("ma20 :", ma20)
 print("ma5 :", ma5_before3, "->", ma5_before2, "->", ma5_now)
-print("macd_value :", macd_before3, "->", macd_before2, "->", macd_now)
-print("macd_signal_value :", macd_s_before3, "->", macd_s_before2, "->", macd_s_now)
-print("stoch_k :", fast_k_before3)
-
+print("macd :", macd_before3, "->", macd_before2, "->", macd_now)
+print("macd_signal :", macd_s_before3, "->", macd_s_before2, "->", macd_s_now)
+print("stoch_k :", fast_k_before3, "->", fast_k_before2, "->", fast_k_now)
+print("stoch_d :", slow_d_before3, "->", slow_d_before2, "->", slow_d_now)
+print("rsi :", rsi_before3, "->", rsi_before2, "->", rsi_now)
 
 # 스크립트 종료 시 데이터 저장
 save_data({"buy_count": buy_count,"average_buy_price": average_buy_price, "total_buy_quantity": total_buy_quantity})
