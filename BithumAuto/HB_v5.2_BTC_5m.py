@@ -51,7 +51,7 @@ bithumb = ccxt.bithumb({
 
 # 종목, 차트기간 설정
 ticker = 'BTC/KRW'                                                                       ###########################
-timeframe = '3m'                                                                         ###########################
+timeframe = '5m'                                                                         ###########################
 since = bithumb.parse8601('2022-01-01T00:00:00Z')
 limit = 50000
 
@@ -131,6 +131,7 @@ ma5_before3 = get_ma(btc_data,5,-4)
 ma5_before2 = get_ma(btc_data,5,-3)
 ma5_now = get_ma(btc_data,5,-2)
 ma20 = get_ma(btc_data,20,-2)
+ma30 = get_ma(btc_data, 30, -2)
 
 # MACD 계산
 macd_before3, macd_s_before3 = get_macd(btc_data, -4)
@@ -155,9 +156,9 @@ rsi_now = get_rsi(btc_data, 14, -2)
 ##############################################################################################
 
 # 매매신호 함수
-def generate_trading_signals(btc_data, ma5_now, ma5_before2, ma5_before3, ma20):
+def generate_trading_signals(btc_data, ma5_now, ma20):
     # MACD와 RSI 계산
-    macd_value, macd_signal_value = get_macd(btc_data, -2)
+    macd_now, macd_s_now = get_macd(btc_data, -2)
     rsi_now = get_rsi(btc_data, 14, -2)
     btc_data['rsi'] = rsi_now
     
@@ -169,14 +170,14 @@ def generate_trading_signals(btc_data, ma5_now, ma5_before2, ma5_before3, ma20):
     # 매매 신호 생성
     signals = pd.DataFrame(index=btc_data.index)
     signals['signal'] = 0.0
-    signals.loc[(ma5_now < ma20) & (ma5_before3 > ma5_before2) & (ma5_before2 < ma5_now) & (btc_data['d_line'] < 30)
+    signals.loc[(ma5_now < ma30) & (macd_before3 > macd_before2) & (macd_before2 < macd_now) & (btc_data['d_line'] < 40)
                  & (btc_data['rsi'] < 40), 'signal'] = 1.0  # 매수 신호     #####################
-    signals.loc[(ma5_now > ma20) & (ma5_before3 < ma5_before2) & (ma5_before2 > ma5_now) & (btc_data['d_line'] > 70)
+    signals.loc[(ma5_now > ma30) & (macd_before3 < macd_before2) & (macd_before2 > macd_now) & (btc_data['d_line'] > 60)
                  & (btc_data['rsi'] > 60), 'signal'] = -1.0  # 매도 신호    #####################
     signals['positions'] = signals['signal'].diff()
     return signals
 
-signals = generate_trading_signals(btc_data, ma5_now, ma5_before2, ma5_before3, ma20)
+signals = generate_trading_signals(btc_data, ma5_now, ma20)
 
 # 실제 거래를 위한 함수
 def execute_real_trade(btc_data, signals):
@@ -256,6 +257,7 @@ def save_data(data):
     with open('trade_data.json', 'w') as file:
         json.dump(data, file)
 
+
 # 스크립트 시작 시 데이터 로드
 data = load_data()
 buy_count = data['buy_count']
@@ -268,7 +270,7 @@ print(f"시간 (KST): {current_time}, 종가: {btc_data['close'].iloc[-2]:.0f}, 
   
 execute_real_trade(btc_data, signals)
 
-print("ma20 :", ma20)
+print("ma30 :", ma30)
 print("ma5 :", ma5_before3, "->", ma5_before2, "->", ma5_now)
 print("macd :", macd_before3, "->", macd_before2, "->", macd_now)
 print("macd_signal :", macd_s_before3, "->", macd_s_before2, "->", macd_s_now)
