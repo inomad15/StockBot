@@ -123,14 +123,18 @@ btc_data = df
 
 '''
 # btc_data의 컬럼 확인 (디버깅 목적)
-print(btc_data.columns)
+print(btc_data)
+
 '''
+
+
 
 # 이동평균 계산
 ma5_before3 = get_ma(btc_data,5,-4)
 ma5_before2 = get_ma(btc_data,5,-3)
 ma5_now = get_ma(btc_data,5,-2)
 ma20 = get_ma(btc_data,20,-2)
+ma30 = get_ma(btc_data,30,-2)
 
 # MACD 계산
 macd_before3, macd_s_before3 = get_macd(btc_data, -4)
@@ -217,7 +221,7 @@ def execute_real_trade(btc_data, signals):
                 if base_currency in balance and 'free' in balance[base_currency]:
                     base_currency_balance = balance[base_currency]['free']
                     if base_currency_balance > 0:
-                    # 주문량 계산 (전량 매도 또는 0.006 BTC 중 작은 값)
+                    # 주문량 계산 (전량 매도 또는 0.005 BTC 중 작은 값)
                         order_quantity = min(base_currency_balance, 0.005)      ###############################
                     # 매도 주문 실행
                         bithumb.create_market_sell_order(ticker, order_quantity)
@@ -278,3 +282,5 @@ print("rsi :", rsi_before3, "->", rsi_before2, "->", rsi_now)
 
 # 스크립트 종료 시 데이터 저장
 save_data({"buy_count": buy_count,"average_buy_price": average_buy_price, "total_buy_quantity": total_buy_quantity})
+
+
