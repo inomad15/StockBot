@@ -1,0 +1,43 @@
+python3 --version
+
+sudo mkdir /var/autobot
+
+sudo chown -R ec2-user /var/autobot
+
+sudo chmod 2775 /var/autobot
+
+find /var/autobot -type d -exec sudo chmod 2775 {} \;
+
+pip3 install urllib3==1.26.6
+
+위 명령어를 차례로 치세요 추가된 명령어도 있습니다.
+자세한 설명은 제 블로그의 글을 참고하세요!
+
+https://blog.naver.com/zacra/222496103225
+
+
+####################위의 명령어로 안되면 아래의 과정을 거칩니다.##################################
+
+sudo yum update
+
+sudo yum groupinstall "Development Tools"
+
+sudo yum install zlib-devel
+
+wget https://www.openssl.org/source/openssl-1.1.1l.tar.gz
+
+tar -xf openssl-1.1.1l.tar.gz
+
+cd openssl-1.1.1l
+
+./config
+
+make
+
+sudo make install
+
+sudo ldconfig
+
+openssl version
+
+pip3 install urllib3==1.26.6
