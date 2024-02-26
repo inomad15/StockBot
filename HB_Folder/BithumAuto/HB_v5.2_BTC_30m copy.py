@@ -220,7 +220,6 @@ base_currency = ticker.split('/')[0]  # 예: BTC/KRW에서 BTC를 얻음
 base_currency_balance = balance[base_currency]
 won = balance["KRW"]
 print(mybalance)
-print(balance)
 print("---------------------------------------------------------------------")
 
 print(f"주문가능원화 : , {won["free"]:.0f}")
