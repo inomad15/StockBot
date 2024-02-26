@@ -53,7 +53,7 @@ mybithumb = pybithumb.Bithumb(Bithumb_ApiKey, Bithumb_Secret)
 
 # 종목, 차트기간 설정
 ticker = 'BTC/KRW'                                                                       ###########################
-timeframe = '30m'                                                                         ###########################
+timeframe = '5m'                                                                         ###########################
 since = bithumb.parse8601('2022-01-01T00:00:00Z')
 limit = 50000
 
@@ -222,31 +222,41 @@ won = balance["KRW"]
 print(mybalance)
 print("---------------------------------------------------------------------")
 
-print(f"주문가능원화 : , {won["free"]:.0f}")
+print(f"주문가능원화 : {won['free']:.0f}")
 print(base_currency, " 보유수량 : ",base_currency_balance['free'])
-print("평균매수가 : ", average_buy_price, "총 매수량 : ", total_buy_quantity)
+print("총매수횟수 : ", buy_count, "평균매수가 : ", average_buy_price, "총매수갯수 : ", total_buy_quantity)
 print("---------------------------------------------------------------------")
+print(btc_data['close'].tail())
+order_price = btc_data['close'].iloc[-1]
+print("order price :", order_price)
 ###################################################################################################
 
 # 실제 거래를 위한 함수
 def execute_real_trade(btc_data, signals, buy_count, average_buy_price, total_buy_quantity):
     current_time = datetime.datetime.now(pytz.timezone('Asia/Seoul'))
     order_price = btc_data['close'].iloc[-1]
-    last_signal = signals['signal'].iloc[-1]
-    buy_quantity = 0.005  # 매수 수량 (예시 값)#####################################################
-    order_won = order_price * buy_quantity
+    last_signal = signals['signal'].iloc[-2]
+    
 
     if last_signal == 1 and buy_count < 6:  # 매수 신호가 있고, 매수 횟수가 6회 미만인 경우
             # 잔고 확인 로직 추가
             if won["free"] > (order_price * 0.005) * 1.0004:  # 매수 가능한 잔고가 있는지 확인
                 print(f"매수 신호 (KST): 시간 {current_time}, 가격 {order_price}")
-                        # 매수 주문 로직
+            # 매수 주문 로직
+                buy_quantity = 0.005  # 매수 수량 (예시 값)#####################################################
+                new_cost = order_price * buy_quantity
+                
                 bithumb.create_market_buy_order(ticker, buy_quantity)     
                 
                 buy_count += 1  # 매수 횟수 증가
-                total_cost = buy_quantity * order_price
+                old_cost = average_buy_price * total_buy_quantity
+                total_cost = new_cost + old_cost
                 total_buy_quantity += buy_quantity
                 average_buy_price = total_cost / total_buy_quantity
+
+                print("매수횟수 : ", buy_count)
+                print("매수금액 : ", new_cost)
+                print(ticker, "보유갯수", total_buy_quantity, "", "총매수금액 : ", total_cost, "", "평균매수단가 : ", average_buy_price)
             else:
                 print("매수 가능한 잔고가 부족합니다.")
  
@@ -255,18 +265,21 @@ def execute_real_trade(btc_data, signals, buy_count, average_buy_price, total_bu
             if order_price >= average_buy_price * 1.01:
                 print(f"매도 신호 (KST): 시간 {current_time}, 가격 {order_price}")
             # 매도 주문 로직
-                balance = bithumb.fetch_balance()
-                base_currency = ticker.split('/')[0]  # 예: BTC/KRW에서 BTC를 얻음
-                if base_currency in balance and 'free' in balance[base_currency]:
-                    base_currency_balance = balance[base_currency]['free']
-                    if base_currency_balance > 0:
+                if total_buy_quantity > 0:
+                    sell_quantity = 0.005  # 매도 수량 (예시 값)#####################################################
+                    new_cost = order_price * sell_quantity
+                    
                     # 주문량 계산 (전량 매도 또는 0.006 BTC 중 작은 값)
-                        order_quantity = min(base_currency_balance, 0.005)      ###############################
+                    order_quantity = min(total_buy_quantity, sell_quantity)      ###############################
                     # 매도 주문 실행
-                        bithumb.create_market_sell_order(ticker, order_quantity)
-                        buy_count -= 1  # 매수 횟수 감소
-                    else:
-                        print("매도할 잔액이 없습니다.")
+                    bithumb.create_market_sell_order(ticker, order_quantity)
+                    buy_count -= 1  # 매수 횟수 감소
+                    old_cost = average_buy_price * total_buy_quantity
+                    total_cost = old_cost - new_cost
+                    total_buy_quantity -= sell_quantity
+                    average_buy_price = total_cost / total_buy_quantity
+                else:
+                    print("매도할 잔액이 없습니다.")
     else:
         print("매매가 이루어지지 않았습니다.")
 
@@ -279,8 +292,9 @@ def execute_real_trade(btc_data, signals, buy_count, average_buy_price, total_bu
 print(f"시간 (KST): {current_time}, 종가: {btc_data['close'].iloc[-2]:.0f}, MACD: {btc_data['MACD'].iloc[-2]:.0f}, MACD 신호: {btc_data['MACD_signal'].iloc[-2]:.0f}, k_line: {btc_data['k_line'].iloc[-2]:.0f}, d_line: {btc_data['d_line'].iloc[-2]:.0f}, RSI: {btc_data['rsi'].iloc[-2]:.0f}")
 print(f"macd : {macd_before3:.0f} -> {macd_before2:.0f} -> {macd_now:.0f}")
 print(f"macd_signal : {macd_s_now:.0f}")
+print("---------------------------------------------------------------------------------------------------------------")
 
-print("현재잔고 :", base_currency_balance)
+print(ticker, "현재잔고 :", base_currency_balance['total'])
 # execute_real_trade 함수 호출
 buy_count, average_buy_price, total_buy_quantity = execute_real_trade(btc_data, signals, buy_count, average_buy_price, total_buy_quantity)
 
