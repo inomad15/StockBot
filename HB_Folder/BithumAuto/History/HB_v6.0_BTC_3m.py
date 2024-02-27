@@ -243,7 +243,7 @@ def execute_real_trade(btc_data, signals, buy_count, average_buy_price, total_bu
             if won["free"] > (order_price * 0.005) * 1.0004:  # 매수 가능한 잔고가 있는지 확인
                 print(f"매수 신호 (KST): 시간 {current_time}, 가격 {order_price}")
             # 매수 주문 로직
-                buy_quantity = 0.005  # 매수 수량 (예시 값)#####################################################
+                buy_quantity = 0.004  # 매수 수량 (예시 값)#####################################################
                 new_cost = order_price * buy_quantity
                 
                 bithumb.create_market_buy_order(ticker, buy_quantity)     
@@ -266,7 +266,7 @@ def execute_real_trade(btc_data, signals, buy_count, average_buy_price, total_bu
                 print(f"매도 신호 (KST): 시간 {current_time}, 가격 {order_price}")
             # 매도 주문 로직
                 if total_buy_quantity > 0:
-                    sell_quantity = 0.005  # 매도 수량 (예시 값)#####################################################
+                    sell_quantity = 0.004  # 매도 수량 (예시 값)#####################################################
                     new_cost = order_price * sell_quantity
                     
                     # 주문량 계산 (전량 매도 또는 0.005 BTC 중 작은 값)
