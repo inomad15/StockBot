@@ -165,15 +165,6 @@ def GetHasCoinCnt(balances):
             CoinCnt += 1
     return CoinCnt
 
-#내가 매수한 (가지고 있는) 코인 개수를 리턴하는 함수
-def GetHasCoinCnt(balances):
-    CoinCnt = 0
-    for value in balances:
-        avg_buy_price = float(value['avg_buy_price'])
-        if avg_buy_price != 0: #원화, 드랍받은 코인(평균매입단가가 0이다) 제외!
-            CoinCnt += 1
-    return CoinCnt
-
 #티커에 해당하는 코인의 평균 매입단가를 리턴한다.
 def GetAvgBuyPrice(balances, Ticker):
     avg_buy_price = 0
