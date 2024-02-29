@@ -20,6 +20,8 @@ https://blog.naver.com/zacra/223086628069
 import myUpbit   #우리가 만든 함수들이 들어있는 모듈
 import time
 import pyupbit
+import line_alert
+
 
 import ende_key  #암복호화키
 import my_key    #업비트 시크릿 액세스키
@@ -60,6 +62,7 @@ FirstEnterMoney = CoinMaxMoney / 100.0 * FirstRate
 #그 이후 매수할 금액 
 WaterEnterMoeny = CoinMaxMoney / 100.0 * WaterRate
 
+print("2024-02-28 updated version")
 print("-----------------------------------------------")
 print (f"Total Money : {myUpbit.GetTotalMoney(balances):.0f}")
 print (f"Total Real Money : {myUpbit.GetTotalRealMoney(balances):.0f}")
@@ -107,7 +110,7 @@ for ticker in Tickers:
             NowCoinTotalMoney = myUpbit.GetCoinNowMoney(balances,ticker)
 
             #15분봉 기준 RSI지표 70 이상이면서 수익권일때 분할 매도를 한다.
-            if rsi15_min >= 70.0 and revenu_rate >= 2.0:
+            if rsi15_min >= 70.0 and revenu_rate >= 5.0:
                 print("!!!!!!!!!!!!!!! Revenue Success Sell Coin! !!!!!!!!!!!!!!!!!!!")
 
                 #현재 걸려있는 지정가 주문을 취소한다. 왜? 아래 매수매도 로직이 있으니깐 
@@ -117,10 +120,12 @@ for ticker in Tickers:
                 if NowCoinTotalMoney < (CoinMaxMoney / 4.0):
                     #시장가 매도를 한다.
                     balances = myUpbit.SellCoinMarket(upbit,ticker,upbit.get_balance(ticker))
+                    line_alert.SendMessage("15분봉 매도신호")
                 #최대코인매수금액의 1/4보다 크다면 절반씩 시장가 매도 
                 else:
                     #시장가 매도를 한다.
-                    balances = myUpbit.SellCoinMarket(upbit,ticker,upbit.get_balance(ticker) / 2.0)
+                    balances = myUpbit.SellCoinMarket(upbit,ticker,upbit.get_balance(ticker) / 5.0)
+                    line_alert.SendMessage("15분봉 매도신호")
 
                 #팔았으면 원화를 다시 가져올 필요가 있다.
                 won = float(upbit.get_balance("KRW"))
@@ -134,6 +139,7 @@ for ticker in Tickers:
                 myUpbit.CancelCoinOrder(upbit,ticker)
                 #시장가 매도를 한다.
                 balances = myUpbit.SellCoinMarket(upbit,ticker,upbit.get_balance(ticker) / 2.0)
+                line_alert.SendMessage("15분봉 매도신호")
 
 
 
@@ -150,6 +156,7 @@ for ticker in Tickers:
 
                      #시장가 매수를 한다.
                     balances = myUpbit.BuyCoinMarket(upbit,ticker,WaterEnterMoeny)
+                    line_alert.SendMessage("15분봉 매수신호")
 
 
                 #50%를 초과하면
@@ -163,6 +170,7 @@ for ticker in Tickers:
 
                          #시장가 매수를 한다.
                         balances = myUpbit.BuyCoinMarket(upbit,ticker,WaterEnterMoeny)
+                        line_alert.SendMessage("15분봉 매수신호")
 
 
             print("------------------------------------")
@@ -185,6 +193,7 @@ for ticker in Tickers:
                 print("!!!!!!!!!!!!!! ADD Buy GoGoGo !!!!!!!!!!!!!!!!!!!!!!!")
                  #시장가 매수를 한다.
                 balances = myUpbit.BuyCoinMarket(upbit,ticker,FirstEnterMoney)
+                line_alert.SendMessage("15분봉 매수신호")
 
 
             time.sleep(0.05)
@@ -207,6 +216,7 @@ for ticker in Tickers:
                 print("!!!!!!!!!!!!!! DANTA DANTA ADD Buy GoGoGo !!!!!!!!!!!!!!!!!!!!!!!")
                 #시장가 매수를 한다.
                 balances = myUpbit.BuyCoinMarket(upbit,ticker,FirstEnterMoney)
+                line_alert.SendMessage("15분봉 매수신호")
 
         
         #아직 매수안한 코인 ###########################################################################
@@ -236,6 +246,7 @@ for ticker in Tickers:
                 print("!!!!!!!!!!!!!! First Buy GoGoGo !!!!!!!!!!!!!!!!!!!!!!!")
                  #시장가 매수를 한다.
                 balances = myUpbit.BuyCoinMarket(upbit,ticker,FirstEnterMoney)
+                line_alert.SendMessage("15분봉 매수신호")
 
 
             time.sleep(0.05)
@@ -258,6 +269,7 @@ for ticker in Tickers:
                 print("!!!!!!!!!!!!!! DANTA DANTA First Buy GoGoGo !!!!!!!!!!!!!!!!!!!!!!!")
                 #시장가 매수를 한다.
                 balances = myUpbit.BuyCoinMarket(upbit,ticker,FirstEnterMoney)
+                line_alert.SendMessage("15분봉 매수신호")
                     
 
     except Exception as e:
