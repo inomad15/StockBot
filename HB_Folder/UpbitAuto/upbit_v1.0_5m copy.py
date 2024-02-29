@@ -100,13 +100,15 @@ for ticker in Tickers:
             won = float(upbit.get_balance("KRW"))
             print(f"# Remaining Won : {won:.0f}")
             print(f"{ticker} price : {df5['close'].iloc[-1]}")
+            print(f"macd : {macd_before3:.0f} -> {macd_before2:.0f} -> {macd_now:.0f}")
+            print(f"macd_signal : {macd_s_now:.0f}")
             print(f"- Recently RSI : {rsi5_min_before:.0f} -> {rsi5_min:.0f}")
             print(f"- Now Revenue : {revenu_rate:.2f}")
             print(f"- Coin Total Money : {NowCoinTotalMoney:.0f}")
     
             
             #5분봉 기준 RSI지표 70 이상이면서 수익권일때 분할 매도를 한다.
-            if macd_now > macd_s_now and macd_before3 < macd_before2 and macd_before2 > macd_now)rsi5_min >= 70.0 and revenu_rate >= 3.0:
+            if macd_now > macd_s_now and macd_before3 < macd_before2 and macd_before2 > macd_now and rsi5_min >= 70.0 and revenu_rate >= 3.0:
                 print("!!!!!!!!!!!!!!! Revenue Success Sell Coin! !!!!!!!!!!!!!!!!!!!")
 
                 #현재 걸려있는 지정가 주문을 취소한다. 왜? 아래 매수매도 로직이 있으니깐 
