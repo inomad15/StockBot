@@ -37,7 +37,7 @@ Upbit_ScretKey = simpleEnDecrypt.decrypt(my_key.upbit_secret)
 upbit = pyupbit.Upbit(Upbit_AccessKey, Upbit_ScretKey)
 
 #내가 매수할 총 코인 개수
-MaxCoinCnt = 3.0
+MaxCoinCnt = 5.0
 
 #처음 매수할 비중(퍼센트)
 FirstRate = 10.0
@@ -48,21 +48,16 @@ WaterRate = 10.0
 balances = upbit.get_balances()
 TotalMoeny = myUpbit.GetTotalMoney(balances) #총 원금
 TotalRealMoney = myUpbit.GetTotalRealMoney(balances) #총 평가금액
-
 #내 총 수익율
 TotalRevenue = (TotalRealMoney - TotalMoeny) * 100.0/ TotalMoeny
-
 #코인당 매수할 최대 매수금액
 CoinMaxMoney = TotalMoeny / MaxCoinCnt
-
-
 #처음에 매수할 금액 
 FirstEnterMoney = CoinMaxMoney / 100.0 * FirstRate 
-
 #그 이후 매수할 금액 
 WaterEnterMoeny = CoinMaxMoney / 100.0 * WaterRate
 
-print("2024-02-28 updated version")
+print("2024-02-29 updated version")
 print("-----------------------------------------------")
 print (f"Total Money : {myUpbit.GetTotalMoney(balances):.0f}")
 print (f"Total Real Money : {myUpbit.GetTotalRealMoney(balances):.0f}")
@@ -72,109 +67,68 @@ print (f"CoinMaxMoney : {CoinMaxMoney:.0f}")
 print (f"FirstEnterMoney : {FirstEnterMoney:.0f}")
 print (f"WaterEnterMoeny : {WaterEnterMoeny:.0f}")
 
-#나의 코인
+#매수 대상 코인
 LovelyCoinList = ['KRW-BTC','KRW-ETH','KRW-XRP']
-
 Tickers = pyupbit.get_tickers("KRW")
 
 for ticker in Tickers:
     try: 
-        #이미 매수된 코인이다. 물타기!!
+        #이미 매수된 코인
         if myUpbit.IsHasCoin(balances,ticker) == True:
             
-            print("------------------------------------")
-            print("----- Having Coin ----- :",ticker)
-            
+            print("-----------------------------------------------")
+            print("##### Having Coin :",ticker)
+
             time.sleep(0.05)
             df5 = pyupbit.get_ohlcv(ticker,interval="minute5") #5분봉 데이타를 가져온다.
-
+            
             #RSI지표를 구한다.
-            #제가 현재 캔들을 -1 이 아니라 -2로 
-            #이전 캔들을 -2가 아니라 -3으로 수정했습니다. 이유는 https://blog.naver.com/zacra/222567868086 참고하세요!
             rsi5_min_before = myUpbit.GetRSI(df5,14,-3)
             rsi5_min = myUpbit.GetRSI(df5,14,-2)
 
+            macd_before3, macd_s_before3 = myUpbit.get_macd(df5, -4)
+            macd_before2, macd_s_before2 = myUpbit.get_macd(df5, -3)
+            macd_now, macd_s_now = myUpbit.get_macd(df5, -2)
+
             #수익율을 구한다.
             revenu_rate = myUpbit.GetRevenueRate(balances,ticker)
-
+            #현재 코인의 총 매수금액
+            NowCoinTotalMoney = myUpbit.GetCoinNowMoney(balances,ticker)
             time.sleep(0.05)
+            
             #원화 잔고를 가져온다
             won = float(upbit.get_balance("KRW"))
-            print(f"# Remain Won : {won:.0f}")
+            print(f"# Remaining Won : {won:.0f}")
             print(f"{ticker} price : {df5['close'].iloc[-1]}")
             print(f"- Recently RSI : {rsi5_min_before:.0f} -> {rsi5_min:.0f}")
             print(f"- Now Revenue : {revenu_rate:.2f}")
-        
-
-            #현재 코인의 총 매수금액
-            NowCoinTotalMoney = myUpbit.GetCoinNowMoney(balances,ticker)
-
+            print(f"- Coin Total Money : {NowCoinTotalMoney:.0f}")
+    
+            
             #5분봉 기준 RSI지표 70 이상이면서 수익권일때 분할 매도를 한다.
-            if rsi5_min >= 70.0 and revenu_rate >= 5.0:
+            if macd_now > macd_s_now and macd_before3 < macd_before2 and macd_before2 > macd_now)rsi5_min >= 70.0 and revenu_rate >= 3.0:
                 print("!!!!!!!!!!!!!!! Revenue Success Sell Coin! !!!!!!!!!!!!!!!!!!!")
 
                 #현재 걸려있는 지정가 주문을 취소한다. 왜? 아래 매수매도 로직이 있으니깐 
                 myUpbit.CancelCoinOrder(upbit,ticker)
 
-                #최대코인매수금액의 1/4보다 작다면 전체 시장가 매도 
-                if NowCoinTotalMoney < (CoinMaxMoney / 4.0):
+                #최대코인매수금액의 1/10보다 작다면 전체 시장가 매도 
+                if NowCoinTotalMoney < (CoinMaxMoney / 10.0):
                     #시장가 매도를 한다.
                     balances = myUpbit.SellCoinMarket(upbit,ticker,upbit.get_balance(ticker))
-                    line_alert.SendMessage("5분봉 매도신호 전액 매도")
-                #최대코인매수금액의 1/4보다 크다면 절반씩 시장가 매도 
+                    line_alert.SendMessage(f"5분봉 매도신호 {ticker} 전액 매도")
+                #최대코인매수금액의 1/10보다 크다면 1회 매수금액으로 시장가 매도 
                 else:
                     #시장가 매도를 한다.
-                    balances = myUpbit.SellCoinMarket(upbit,ticker,upbit.get_balance(ticker) / 5.0)
-                    line_alert.SendMessage("5분봉 매도신호 25% 매도")
+                    balances = myUpbit.SellCoinMarket(upbit,ticker,FirstEnterMoney)
+                    line_alert.SendMessage(f"5분봉 매도신호 {ticker} 매도")
 
                 #팔았으면 원화를 다시 가져올 필요가 있다.
                 won = float(upbit.get_balance("KRW"))
                
 
-
-            #내가 가진 원화가 물탈 돈보다 적다..(원금 바닥) 그런데 수익율이 - 10% 이하다? 그럼 절반 팔아서 물탈돈을 마련하자!
-            if won < WaterEnterMoeny and revenu_rate <= -10.0:
-                print("!!!!!!!!!!!!!! No Money Sell Coin Half !!!!!!!!!!!!!!!!!!!!")
-                #현재 걸려있는 지정가 주문을 취소한다. 왜? 아래 매수매도 로직이 있으니깐 
-                myUpbit.CancelCoinOrder(upbit,ticker)
-                #시장가 매도를 한다.
-                balances = myUpbit.SellCoinMarket(upbit,ticker,upbit.get_balance(ticker) / 2.0)
-                line_alert.SendMessage("5분봉 매도신호")
-
-
-
-            #할당된 최대코인매수금액 대비 매수된 코인 비율
-            Total_Rate = NowCoinTotalMoney / CoinMaxMoney * 100.0
-
-            #5분봉 기준 RSI지표 30 이하에서 빠져나왔을 때
-            if rsi5_min_before <= 30.0 and rsi5_min > 30.0:
-                #할당된 최대코인매수금액 대비 매수된 코인 비중이 50%이하일때..
-                if Total_Rate <= 50.0:
-                    print("!!!!!!!!!!!!!! Water GoGo !!!!!!!!!!!!!!!!!!!!!")
-                    #현재 걸려있는 지정가 주문을 취소한다. 왜? 아래 매수매도 로직이 있으니깐 
-                    myUpbit.CancelCoinOrder(upbit,ticker)
-
-                     #시장가 매수를 한다.
-                    balances = myUpbit.BuyCoinMarket(upbit,ticker,WaterEnterMoeny)
-                    line_alert.SendMessage("5분봉 매수신호")
-
-
-                #50%를 초과하면
-                else:
-                    print("!!!!!!!!!!!!!!! Water GoGo But if ",revenu_rate," Under !!!!!!!!!!!!!!!!!!!!!")
-                    #수익율이 마이너스 5% 이하 일때만 매수를 진행하여 원금 소진을 늦춘다.
-                    if revenu_rate <= -5.0:
-                        print("!!!!!!!!!!!!!!!Water GoGo!!!!!!!!!!!!!!!!!!!!!")
-                        #현재 걸려있는 지정가 주문을 취소한다. 왜? 아래 매수매도 로직이 있으니깐 
-                        myUpbit.CancelCoinOrder(upbit,ticker)
-
-                         #시장가 매수를 한다.
-                        balances = myUpbit.BuyCoinMarket(upbit,ticker,WaterEnterMoeny)
-                        line_alert.SendMessage("5분봉 매수신호")
-
-
             print("------------------------------------")
-            print("----- Try Add Buy ----- :",ticker)
+            print("##### Try Add Buy :",ticker)
             
             time.sleep(0.05)
             df5 = pyupbit.get_ohlcv(ticker,interval="minute5") #5분봉 데이타를 가져온다.
@@ -189,11 +143,11 @@ for ticker in Tickers:
 
 
             #5분봉 기준 RSI지표 30 이하에서 빠져나오면서 아직 매수한 코인이 MaxCoinCnt보다 작다면 매수 진행!
-            if rsi5_min_before <= 30.0 and rsi5_min > 30.0 and myUpbit.GetHasCoinCnt(balances) < MaxCoinCnt :
+            if rsi5_min_before <= 30.0 and rsi5_min > 30.0 and myUpbit.GetHasCoinCnt(balances) <= MaxCoinCnt :
                 print("!!!!!!!!!!!!!! ADD Buy GoGoGo !!!!!!!!!!!!!!!!!!!!!!!")
                  #시장가 매수를 한다.
                 balances = myUpbit.BuyCoinMarket(upbit,ticker,FirstEnterMoney)
-                line_alert.SendMessage("5분봉 매수신호")
+                line_alert.SendMessage(f"5분봉 매수신호 {ticker} 추가매수")
 
 
             time.sleep(0.05)

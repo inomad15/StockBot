@@ -73,6 +73,32 @@ def GetBB(ohlcv,period,st):
 
     return dic_bb
 
+# MACD 계산 함수
+def get_macd(ohlcv,st):
+    macd_short, macd_long, macd_signal=12,26,9
+
+    ohlcv["MACD_short"]=ohlcv["close"].ewm(span=macd_short).mean()
+    ohlcv["MACD_long"]=ohlcv["close"].ewm(span=macd_long).mean()
+    ohlcv["MACD"]=ohlcv["MACD_short"] - ohlcv["MACD_long"]
+    ohlcv["MACD_signal"]=ohlcv["MACD"].ewm(span=macd_signal).mean() 
+
+    return ohlcv["MACD"].iloc[st], ohlcv["MACD_signal"].iloc[st]
+
+# 스토캐스틱 계산 함수
+def get_sto(ohlcv,period,st):
+
+    stoch = dict()
+
+    ndays_high = ohlcv['high'].rolling(window=period, min_periods=1).max()
+    ndays_low = ohlcv['low'].rolling(window=period, min_periods=1).min()
+    fast_k = (ohlcv['close'] - ndays_low)/(ndays_high - ndays_low)*100
+    slow_d = fast_k.rolling(window=3, min_periods=1).mean()
+
+    stoch['fast_k'] = fast_k.iloc[st]
+    stoch['slow_d'] = slow_d.iloc[st]
+
+    return fast_k.iloc[st], slow_d.iloc[st]
+
 
 #거래대금이 많은 순으로 코인 리스트를 얻는다. 첫번째 : Interval기간(day,week,minute15 ....), 두번째 : 몇개까지 
 def GetTopCoinList(interval,top):
