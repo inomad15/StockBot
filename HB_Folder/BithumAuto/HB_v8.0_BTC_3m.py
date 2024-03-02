@@ -157,9 +157,9 @@ rsi_before2 = get_rsi(btc_data, 14, -3)
 rsi_now = get_rsi(btc_data, 14, -2)
 
 ##############################################################################################  
-mybalance = mybithumb.get_balance("BTC")
-balance = bithumb.fetch_balance()
 base_currency = ticker.split('/')[0]  # 예: BTC/KRW에서 BTC를 얻음
+mybalance = mybithumb.get_balance(base_currency)
+balance = bithumb.fetch_balance()
 base_currency_balance = balance[base_currency]
 total_buy_quantity = base_currency_balance['free']
 won = balance["KRW"]
@@ -167,7 +167,8 @@ current_time = datetime.datetime.now(pytz.timezone('Asia/Seoul'))
 order_price = btc_data['close'].iloc[-1]
 
 print("---------------------------------------------------------------------")
-print("계좌잔고조회 :", mybalance)
+print("계좌잔고조회 1 :", mybalance)
+print("계좌잔고조회 2 :", base_currency_balance)
 print(f"주문가능원화 : {won['free']:,.0f} 원")
 print(f" 보유수량 : {total_buy_quantity} {base_currency}")
 print("---------------------------------------------------------------------")
@@ -215,6 +216,4 @@ elif macd_now > macd_s_now and macd_before3 < macd_before2 and macd_before2 > ma
 else:
     print("매매가 이루어지지 않았습니다.")
 
-
-print(base_currency_balance)
 
