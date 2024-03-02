@@ -19,10 +19,10 @@ Upbit_ScretKey = simpleEnDecrypt.decrypt(my_key.upbit_secret)
 upbit = pyupbit.Upbit(Upbit_AccessKey, Upbit_ScretKey)
 
 # 내가 매수할 총 코인 개수
-MaxCoinCnt = 3.0
+MaxCoinCnt = 5.0
 
 # 처음 매수할 비중(퍼센트)
-FirstRate = 20.0
+FirstRate = 10.0
 # 추가 매수할 비중 (퍼센트)
 WaterRate = 10.0
 
@@ -39,15 +39,15 @@ FirstEnterMoney = CoinMaxMoney / 100.0 * FirstRate
 # 2차 매수 금액 
 WaterEnterMoeny = CoinMaxMoney / 100.0 * WaterRate
 
-print("2024-02-29-23:45 updated version")
+print("2024-03-01 updated version")
 print("-----------------------------------------------")
-print (f"Total Money : {myUpbit.GetTotalMoney(balances):.0f}")
-print (f"Total Real Money : {myUpbit.GetTotalRealMoney(balances):.0f}")
+print (f"Total Money : {myUpbit.GetTotalMoney(balances):,.0f}")
+print (f"Total Real Money : {myUpbit.GetTotalRealMoney(balances):,.0f}")
 print (f"Total Revenue : {TotalRevenue:.2f}")
 print("-----------------------------------------------")
-print (f"CoinMaxMoney : {CoinMaxMoney:.0f}")
-print (f"FirstEnterMoney : {FirstEnterMoney:.0f}")
-print (f"WaterEnterMoeny : {WaterEnterMoeny:.0f}")
+print (f"CoinMaxMoney : {CoinMaxMoney:,.0f}")
+print (f"FirstEnterMoney : {FirstEnterMoney:,.0f}")
+print (f"WaterEnterMoeny : {WaterEnterMoeny:,.0f}")
 
 # 매수 대상 코인
 LovelyCoinList = ['KRW-BTC','KRW-ETH','KRW-XRP']
@@ -63,16 +63,16 @@ for ticker in Tickers:
             print("##### Having Coin :",ticker)
 
             time.sleep(0.05)
-            df30 = pyupbit.get_ohlcv(ticker,interval="minute30") #30분봉 데이타를 가져온다.
+            df5 = pyupbit.get_ohlcv(ticker,interval="minute5") #5분봉 데이타를 가져온다.
             
             # RSI지표
-            rsi30_min_before = myUpbit.GetRSI(df30,14,-3)
-            rsi30_min = myUpbit.GetRSI(df30,14,-2)
+            rsi5_min_before = myUpbit.GetRSI(df5,14,-3)
+            rsi5_min = myUpbit.GetRSI(df5,14,-2)
 
             # MACD 지표
-            macd_before3, macd_s_before3 = myUpbit.get_macd(df30, -4)
-            macd_before2, macd_s_before2 = myUpbit.get_macd(df30, -3)
-            macd_now, macd_s_now = myUpbit.get_macd(df30, -2)
+            macd_before3, macd_s_before3 = myUpbit.get_macd(df5, -4)
+            macd_before2, macd_s_before2 = myUpbit.get_macd(df5, -3)
+            macd_now, macd_s_now = myUpbit.get_macd(df5, -2)
 
             # 보유 코인 수익율
             revenu_rate = myUpbit.GetRevenueRate(balances,ticker)
@@ -83,13 +83,13 @@ for ticker in Tickers:
             
             #원화 잔고를 가져온다
             won = float(upbit.get_balance("KRW"))
-            print(f"# Remaining Won : {won:.0f}")
-            print(f"{ticker} price : {df30['close'].iloc[-1]}")
-            print(f"macd_signal : {macd_s_now:.0f}")
-            print(f"macd : {macd_before3:.0f} -> {macd_before2:.0f} -> {macd_now:.0f}")
-            print(f"- Recently RSI : {rsi30_min_before:.0f} -> {rsi30_min:.0f}")
+            print(f"# Remaining Won : {won:,.0f}")
+            print(f"{ticker} price : {df5['close'].iloc[-1]:,.0f}")
+            print(f"macd : {macd_before3:,.0f} -> {macd_before2:,.0f} -> {macd_now:,.0f}")
+            print(f"macd_signal : {macd_s_now:,.0f}")
+            print(f"- Recently RSI : {rsi5_min_before:.0f} -> {rsi5_min:.0f}")
             print(f"- Now Revenue : {revenu_rate:.2f}")
-            print(f"- Coin Total Money : {NowCoinTotalMoney:.0f}")
+            print(f"- Coin Total Money : {NowCoinTotalMoney:,.0f}")
     
             
         ### MACD 하락전환 시 수익권일 때 분할 매도 ###
@@ -103,12 +103,12 @@ for ticker in Tickers:
                 if NowCoinTotalMoney < (CoinMaxMoney / 10.0):
                     #시장가 매도를 한다.
                     balances = myUpbit.SellCoinMarket(upbit,ticker,upbit.get_balance(ticker))
-                    line_alert.SendMessage(f"30분봉 MACD 하락전환 {ticker} 전액 매도")
+                    line_alert.SendMessage(f"5분봉 MACD 하락전환 {ticker} 전액 매도")
                 # 최대코인매수금액의 1/10보다 크다면 1회 매수금액으로 시장가 매도 
                 else:
                     #시장가 매도를 한다.
                     balances = myUpbit.SellCoinMarket(upbit,ticker,FirstEnterMoney)
-                    line_alert.SendMessage(f"30분봉 MACD 하락전환 {ticker} 일부 매도")
+                    line_alert.SendMessage(f"5분봉 MACD 하락전환 {ticker} 일부 매도")
 
                 #팔았으면 원화를 다시 가져올 필요가 있다.
                 won = float(upbit.get_balance("KRW"))
@@ -118,61 +118,62 @@ for ticker in Tickers:
             print("##### Try Add Buy :",ticker)
             
             time.sleep(0.05)
-            df30 = pyupbit.get_ohlcv(ticker,interval="minute30") #30분봉 데이타를 가져온다.
+            df5 = pyupbit.get_ohlcv(ticker,interval="minute5") #5분봉 데이타를 가져온다.
 
 
             #RSI지표를 구한다.
-            rsi30_min_before = myUpbit.GetRSI(df30,14,-3)
-            rsi30_min = myUpbit.GetRSI(df30,14,-2)
+            rsi5_min_before = myUpbit.GetRSI(df5,14,-3)
+            rsi5_min = myUpbit.GetRSI(df5,14,-2)
 
 
-            print(f"- Recently RSI : {rsi30_min_before:.0f} -> {rsi30_min:.0f}")
+            print(f"- Recently RSI : {rsi5_min_before:.0f} -> {rsi5_min:.0f}")
 
 
         ### RSI지표 30선 위로 상향돌파 시 추가매수 ###
-            if rsi30_min_before <= 30.0 and rsi30_min > 30.0 and myUpbit.GetHasCoinCnt(balances) <= MaxCoinCnt :
+            if rsi5_min_before <= 30.0 and rsi5_min > 30.0 and myUpbit.GetHasCoinCnt(balances) <= MaxCoinCnt :
                 print("!!!!!!!!!!!!!! ADD Buy GoGoGo !!!!!!!!!!!!!!!!!!!!!!!")
                  #시장가 매수를 한다.
                 balances = myUpbit.BuyCoinMarket(upbit,ticker,FirstEnterMoney)
-                line_alert.SendMessage(f"30분봉 RSI 상승전환 {ticker} 추가매수")
+                line_alert.SendMessage(f"5분봉 RSI 상승전환 {ticker} 추가매수")
 
             time.sleep(0.05)
 
-            df30 = pyupbit.get_ohlcv(ticker,interval="minute30") #30분봉 데이타를 가져온다.
+            df5 = pyupbit.get_ohlcv(ticker,interval="minute5") #5분봉 데이타를 가져온다.
 
             # MACD 지표
-            macd_before3, macd_s_before3 = myUpbit.get_macd(df30, -4)
-            macd_before2, macd_s_before2 = myUpbit.get_macd(df30, -3)
-            macd_now, macd_s_now = myUpbit.get_macd(df30, -2)
+            macd_before3, macd_s_before3 = myUpbit.get_macd(df5, -4)
+            macd_before2, macd_s_before2 = myUpbit.get_macd(df5, -3)
+            macd_now, macd_s_now = myUpbit.get_macd(df5, -2)
             
-            print(f"macd_signal : {macd_s_now:.0f}")
-            print(f"macd : {macd_before3:.0f} -> {macd_before2:.0f} -> {macd_now:.0f}")
+            print(f"macd_signal : {macd_s_now:,.0f}")
+            print(f"macd : {macd_before3:,.0f} -> {macd_before2:,.0f} -> {macd_now:,.0f}")
 
         ### MACD 상승전환 시 추가매수 ###
-            if macd_now < macd_s_now and macd_before3 > macd_before2 and macd_before2 < macd_now and myUpbit.GetHasCoinCnt(balances) < MaxCoinCnt :
+            if macd_now < macd_s_now and macd_before3 > macd_before2 and macd_before2 < macd_now and myUpbit.GetHasCoinCnt(balances) <= MaxCoinCnt :
                 print("!!!!!!!!!!!!!! DANTA DANTA ADD Buy GoGoGo !!!!!!!!!!!!!!!!!!!!!!!")
                 #시장가 매수를 한다.
                 balances = myUpbit.BuyCoinMarket(upbit,ticker,FirstEnterMoney)
-                line_alert.SendMessage(f"30분봉 MA 상승전환 {ticker} 추가매수")
+                line_alert.SendMessage(f"5분봉 MACD 상승전환 {ticker} 추가매수")
 
-            #30분봉 기준 5일선 값을 구한다.
-            ma5_before3 = myUpbit.GetMA(df30,5,-4)
-            ma5_before2 = myUpbit.GetMA(df30,5,-3)
-            ma5 = myUpbit.GetMA(df30,5,-2)
+            
+        #     #5분봉 기준 5일선 값을 구한다.
+        #     ma5_before3 = myUpbit.GetMA(df5,5,-4)
+        #     ma5_before2 = myUpbit.GetMA(df5,5,-3)
+        #     ma5 = myUpbit.GetMA(df5,5,-2)
 
-            #30분봉 기준 20일선 값을 구한다.
-            ma20 = myUpbit.GetMA(df30,20,-2)
+        #     #5분봉 기준 20일선 값을 구한다.
+        #     ma20 = myUpbit.GetMA(df5,20,-2)
 
-            print(f"ma20 : {ma20:.0f}")
-            print(f"ma5 : {ma5_before3:.0f} -> {ma5_before2:.0f} -> {ma5_before3:.0f}")
+        #     print(f"ma20 : {ma20:.0f}")
+        #     print(f"ma5 : {ma5_before3:.0f} -> {ma5_before2:.0f} -> {ma5_before3:.0f}")
 
 
-        ### 5일 이평선 상승전환 시 추가매수 ###
-            if ma5 < ma20 and ma5_before3 > ma5_before2 and ma5_before2 < ma5 and myUpbit.GetHasCoinCnt(balances) < MaxCoinCnt :
-                print("!!!!!!!!!!!!!! DANTA DANTA First Buy GoGoGo !!!!!!!!!!!!!!!!!!!!!!!")
-                #시장가 매수를 한다.
-                balances = myUpbit.BuyCoinMarket(upbit,ticker,FirstEnterMoney)
-                line_alert.SendMessage(f"30분봉 MA 상승전환 {ticker} 추가매수")
+        # ### 5일 이평선 상승전환 시 추가매수 ###
+        #     if ma5 < ma20 and ma5_before3 > ma5_before2 and ma5_before2 < ma5 and myUpbit.GetHasCoinCnt(balances) <= MaxCoinCnt :
+        #         print("!!!!!!!!!!!!!! DANTA DANTA First Buy GoGoGo !!!!!!!!!!!!!!!!!!!!!!!")
+        #         #시장가 매수를 한다.
+        #         balances = myUpbit.BuyCoinMarket(upbit,ticker,FirstEnterMoney)
+        #         line_alert.SendMessage(f"5분봉 MA 상승전환 {ticker} 추가매수")
 
         
     ### 신규 매수 ###########################################################################
@@ -186,60 +187,60 @@ for ticker in Tickers:
             print("##### Try Fisrt Buy :",ticker)
             
             time.sleep(0.05)
-            df30 = pyupbit.get_ohlcv(ticker,interval="minute30") #30분봉 데이타를 가져온다.
+            df5 = pyupbit.get_ohlcv(ticker,interval="minute5") #5분봉 데이타를 가져온다.
 
             #RSI지표를 구한다.
-            rsi30_min_before = myUpbit.GetRSI(df30,14,-3)
-            rsi30_min = myUpbit.GetRSI(df30,14,-2)
+            rsi5_min_before = myUpbit.GetRSI(df5,14,-3)
+            rsi5_min = myUpbit.GetRSI(df5,14,-2)
 
-            print(f"- Recently RSI : {rsi30_min_before:.0f} -> {rsi30_min:.0f}")
+            print(f"- Recently RSI : {rsi5_min_before:.0f} -> {rsi5_min:.0f}")
 
 
         ### RSI지표 30선 위로 상향돌파 시 신규매수 ###
-            if rsi30_min_before <= 30.0 and rsi30_min > 30.0 and myUpbit.GetHasCoinCnt(balances) < MaxCoinCnt :
+            if rsi5_min_before <= 30.0 and rsi5_min > 30.0 and myUpbit.GetHasCoinCnt(balances) < MaxCoinCnt :
                 print("!!!!!!!!!!!!!! First Buy GoGoGo !!!!!!!!!!!!!!!!!!!!!!!")
                  #시장가 매수를 한다.
                 balances = myUpbit.BuyCoinMarket(upbit,ticker,FirstEnterMoney)
-                line_alert.SendMessage(f"30분봉 RSI 상승전환 {ticker} 신규매수")
+                line_alert.SendMessage(f"5분봉 RSI 상승전환 {ticker} 신규매수")
 
 
             time.sleep(0.05)
-            df30 = pyupbit.get_ohlcv(ticker,interval="minute30") #30분봉 데이타를 가져온다.
+            df5 = pyupbit.get_ohlcv(ticker,interval="minute5") #5분봉 데이타를 가져온다.
 
             # MACD 지표
-            macd_before3, macd_s_before3 = myUpbit.get_macd(df30, -4)
-            macd_before2, macd_s_before2 = myUpbit.get_macd(df30, -3)
-            macd_now, macd_s_now = myUpbit.get_macd(df30, -2)
+            macd_before3, macd_s_before3 = myUpbit.get_macd(df5, -4)
+            macd_before2, macd_s_before2 = myUpbit.get_macd(df5, -3)
+            macd_now, macd_s_now = myUpbit.get_macd(df5, -2)
             
-            print(f"macd_signal : {macd_s_now:.0f}")
-            print(f"macd : {macd_before3:.0f} -> {macd_before2:.0f} -> {macd_now:.0f}")
+            print(f"macd_signal : {macd_s_now:,.0f}")
+            print(f"macd : {macd_before3:,.0f} -> {macd_before2:,.0f} -> {macd_now:,.0f}")
 
         ### MACD 상승전환 시 신규매수 ###
             if macd_now < macd_s_now and macd_before3 > macd_before2 and macd_before2 < macd_now and myUpbit.GetHasCoinCnt(balances) < MaxCoinCnt :
                 print("!!!!!!!!!!!!!! DANTA DANTA First Buy GoGoGo !!!!!!!!!!!!!!!!!!!!!!!")
                 #시장가 매수를 한다.
                 balances = myUpbit.BuyCoinMarket(upbit,ticker,FirstEnterMoney)
-                line_alert.SendMessage(f"30분봉 MACD 상승전환 {ticker} 신규매수")
+                line_alert.SendMessage(f"5분봉 MACD 상승전환 {ticker} 신규매수")
             
             
-            #30분봉 기준 5일선 값을 구한다.
-            ma5_before3 = myUpbit.GetMA(df30,5,-4)
-            ma5_before2 = myUpbit.GetMA(df30,5,-3)
-            ma5 = myUpbit.GetMA(df30,5,-2)
+        #     #5분봉 기준 5일선 값을 구한다.
+        #     ma5_before3 = myUpbit.GetMA(df5,5,-4)
+        #     ma5_before2 = myUpbit.GetMA(df5,5,-3)
+        #     ma5 = myUpbit.GetMA(df5,5,-2)
 
-            #30분봉 기준 20일선 값을 구한다.
-            ma20 = myUpbit.GetMA(df30,20,-2)
+        #     #5분봉 기준 20일선 값을 구한다.
+        #     ma20 = myUpbit.GetMA(df5,20,-2)
 
-            print(f"ma20 : {ma20:.0f}")
-            print(f"ma5 : {ma5_before3:.0f} -> {ma5_before2:.0f} -> {ma5_before3:.0f}")
+        #     print(f"ma20 : {ma20:.0f}")
+        #     print(f"ma5 : {ma5_before3:.0f} -> {ma5_before2:.0f} -> {ma5_before3:.0f}")
 
 
-        ### 5일 이평선 상승전환 시 신규매수 ###
-            if ma5 < ma20 and ma5_before3 > ma5_before2 and ma5_before2 < ma5 and myUpbit.GetHasCoinCnt(balances) < MaxCoinCnt :
-                print("!!!!!!!!!!!!!! DANTA DANTA First Buy GoGoGo !!!!!!!!!!!!!!!!!!!!!!!")
-                #시장가 매수를 한다.
-                balances = myUpbit.BuyCoinMarket(upbit,ticker,FirstEnterMoney)
-                line_alert.SendMessage(f"30분봉 MA 상승전환 {ticker} 신규매수")
+        # ### 5일 이평선 상승전환 시 신규매수 ###
+        #     if ma5 < ma20 and ma5_before3 > ma5_before2 and ma5_before2 < ma5 and myUpbit.GetHasCoinCnt(balances) < MaxCoinCnt :
+        #         print("!!!!!!!!!!!!!! DANTA DANTA First Buy GoGoGo !!!!!!!!!!!!!!!!!!!!!!!")
+        #         #시장가 매수를 한다.
+        #         balances = myUpbit.BuyCoinMarket(upbit,ticker,FirstEnterMoney)
+        #         line_alert.SendMessage(f"5분봉 MA 상승전환 {ticker} 신규매수")
                     
 
     except Exception as e:
