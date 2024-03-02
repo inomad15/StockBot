@@ -5,6 +5,7 @@ import pandas as pd
 import ccxt
 import ende_key  #암복호화키
 import my_key    #업비트 시크릿 액세스키
+import line_alert
 
 from cryptography.fernet import Fernet
 
@@ -155,97 +156,65 @@ rsi_before3 = get_rsi(btc_data, 14, -4)
 rsi_before2 = get_rsi(btc_data, 14, -3)
 rsi_now = get_rsi(btc_data, 14, -2)
 
-##############################################################################################
-
-# 매매신호 함수
-def generate_trading_signals(btc_data, macd_now, macd_before2, macd_before3, macd_s_now):
-    # MACD와 RSI 계산
-    macd_now, macd_s_now = get_macd(btc_data, -2)
-    rsi_now = get_rsi(btc_data, 14, -2)
-    btc_data['rsi'] = rsi_now
-    
-    # 스토캐스틱 계산
-    k_line, d_line = get_sto(btc_data, 14, -2)
-    btc_data['k_line'] = k_line
-    btc_data['d_line'] = d_line
-
-    # 매매 신호 생성
-    signals = pd.DataFrame(index=btc_data.index)
-    signals['signal'] = 0.0
-    signals.loc[(macd_now < macd_s_now) & (macd_before3 > macd_before2) & (macd_before2 < macd_now), 'signal'] = 1.0  # 매수 신호     #####################
-    signals.loc[(macd_now > macd_s_now) & (macd_before3 < macd_before2) & (macd_before2 > macd_now), 'signal'] = -1.0  # 매도 신호    #####################
-    signals['positions'] = signals['signal'].diff()
-    return signals
-
-signals = generate_trading_signals(btc_data, macd_now, macd_before2, macd_before3, macd_s_now)
-
-###################################################################################################
+##############################################################################################  
 mybalance = mybithumb.get_balance("BTC")
 balance = bithumb.fetch_balance()
 base_currency = ticker.split('/')[0]  # 예: BTC/KRW에서 BTC를 얻음
 base_currency_balance = balance[base_currency]
 total_buy_quantity = base_currency_balance['free']
 won = balance["KRW"]
+current_time = datetime.datetime.now(pytz.timezone('Asia/Seoul'))
+order_price = btc_data['close'].iloc[-1]
+
 print("---------------------------------------------------------------------")
-print(mybalance)
-print("---------------------------------------------------------------------")
-print(f"주문가능원화 : {won['free']:.0f}")
-print(base_currency, " 보유수량 : ",total_buy_quantity)
+print("계좌잔고조회 :", mybalance)
+print(f"주문가능원화 : {won['free']:,.0f} 원")
+print(f" 보유수량 : {total_buy_quantity} {base_currency}")
 print("---------------------------------------------------------------------")
 print(btc_data['close'].tail())
 print("---------------------------------------------------------------------")
 order_price = btc_data['close'].iloc[-1]
-print("order price :", order_price)
-###################################################################################################
-
-# 실제 거래를 위한 함수
-def execute_real_trade(btc_data, signals):
-    current_time = datetime.datetime.now(pytz.timezone('Asia/Seoul'))
-    order_price = btc_data['close'].iloc[-1]
-    last_signal = signals['signal'].iloc[-2]
-    
-
-    if last_signal == 1:  # 매수 신호가 발생한 경우
-            # 잔고 확인 로직 추가
-            if won["free"] > (order_price * 0.004) * 1.0004:  # 매수 가능한 잔고가 있는지 확인
-                print(f"매수 신호 (KST): 시간 {current_time}, 가격 {order_price}")
-            # 매수 주문 로직
-                buy_quantity = 0.004  # 매수 수량 (예시 값)#####################################################
-               
-                bithumb.create_market_buy_order(ticker, buy_quantity)     
-                
-            else:
-                print("매수 가능한 잔고가 부족합니다.")
- 
-        
-    elif last_signal == -1:  # 매도 신호가 발생한 경우
-        if total_buy_quantity > 0:    
-            print(f"매도 신호 (KST): 시간 {current_time}, 가격 {order_price}")
-            sell_quantity = 0.004  # 매도 수량 (예시 값)#####################################################
-            # 주문량 계산 (전량 매도 또는 0.004 BTC 중 작은 값)
-            order_quantity = min(total_buy_quantity, sell_quantity)      ###############################
-                              
-            bithumb.create_market_sell_order(ticker, order_quantity)
-                    
-        else:
-            print("매도할 잔액이 없습니다.")
-    else:
-        print("매매가 이루어지지 않았습니다.")
-
-    return current_time
-
-
-# execute_real_trade 함수 호출
-execute_real_trade(btc_data, signals)
-
+print(f"order price : {order_price:,.0f}")
+################################################################################################
 
 # 최신 시장 데이터와 신호를 가져옵니다
 print("-----------------------------------------------------------------------------------------------------")
-
-print(f"시간 (KST): {current_time}, 종가: {btc_data['close'].iloc[-2]:.0f}, MACD: {btc_data['MACD'].iloc[-2]:.0f}, MACD 신호: {btc_data['MACD_signal'].iloc[-2]:.0f}, k_line: {btc_data['k_line'].iloc[-2]:.0f}, d_line: {btc_data['d_line'].iloc[-2]:.0f}, RSI: {btc_data['rsi'].iloc[-2]:.0f}")
-print(f"macd : {macd_before3:.0f} -> {macd_before2:.0f} -> {macd_now:.0f}")
-print(f"macd_signal : {macd_s_now:.0f}")
+print(f"시간 (KST): {current_time}, 종가: {btc_data['close'].iloc[-2]:,.0f}, MACD: {btc_data['MACD'].iloc[-2]:,.0f}, MACD 신호: {btc_data['MACD_signal'].iloc[-2]:,.0f}, RSI: {btc_data['rsi'].iloc[-2]:,.0f}")
+print(f"macd : {macd_before3:,.0f} -> {macd_before2:,.0f} -> {macd_now:,.0f}")
+print(f"macd_signal : {macd_s_now:,.0f}")
 print("-----------------------------------------------------------------------------------------------------")
 
-print(ticker, "현재잔고 :", base_currency_balance)
+# 주문 실행
+   
+if macd_now < macd_s_now and macd_before3 > macd_before2 and macd_before2 < macd_now:
+        
+    # 잔고 확인 로직 추가
+    if won["free"] > (order_price * 0.004) * 1.0004:  # 매수 가능한 잔고가 있는지 확인
+        print(f"매수 신호 (KST): 시간 {current_time}, 가격 {order_price}")
+    # 매수 주문 로직
+        buy_quantity = 0.004  # 매수 수량 ###################################################
+        bithumb.create_market_buy_order(ticker, buy_quantity)
+        line_alert.SendMessage("Bithumb 3분봉 매수신호 0.004 btc 매수")     
+        
+    else:
+        print("매수 가능한 잔고가 부족합니다.")
+
+        
+elif macd_now > macd_s_now and macd_before3 < macd_before2 and macd_before2 > macd_now:
+    sell_quantity = 0.004  # 매도 수량 (예시 값)#################################################
+    if total_buy_quantity >= sell_quantity:        
+        print(f"매도 신호 (KST): 시간 {current_time}, 가격 {order_price}")
+                                            
+        bithumb.create_market_sell_order(ticker, sell_quantity)
+        line_alert.SendMessage("Bithumb 3분봉 매도신호 0.004 btc 매도")
+
+    else:
+        bithumb.create_market_sell_order(ticker, total_buy_quantity)
+        line_alert.SendMessage("Bithumb 3분봉 매도신호 잔량 전액 매도")
+                        
+else:
+    print("매매가 이루어지지 않았습니다.")
+
+
+print(base_currency_balance)
 

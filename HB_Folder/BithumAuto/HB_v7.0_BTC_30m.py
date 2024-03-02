@@ -5,6 +5,7 @@ import pandas as pd
 import ccxt
 import ende_key  #암복호화키
 import my_key    #업비트 시크릿 액세스키
+import line_alert
 
 from cryptography.fernet import Fernet
 
@@ -178,6 +179,7 @@ def generate_trading_signals(btc_data, macd_now, macd_before2, macd_before3, mac
     return signals
 
 signals = generate_trading_signals(btc_data, macd_now, macd_before2, macd_before3, macd_s_now)
+last_signal = signals['signal'].iloc[-3]
 
 ###################################################################################################
 mybalance = mybithumb.get_balance("BTC")
@@ -202,23 +204,25 @@ print("order price :", order_price)
 def execute_real_trade(btc_data, signals):
     current_time = datetime.datetime.now(pytz.timezone('Asia/Seoul'))
     order_price = btc_data['close'].iloc[-1]
-    last_signal = signals['signal'].iloc[-2]
+    last_signal = signals['signal'].iloc[-3]
     
 
     if last_signal == 1:  # 매수 신호가 발생한 경우
-            # 잔고 확인 로직 추가
-            if won["free"] > (order_price * 0.01) * 1.0004:  # 매수 가능한 잔고가 있는지 확인
-                print(f"매수 신호 (KST): 시간 {current_time}, 가격 {order_price}")
-            # 매수 주문 로직
-                buy_quantity = 0.01  # 매수 수량 (예시 값)#####################################################
-               
-                bithumb.create_market_buy_order(ticker, buy_quantity)     
-                
-            else:
-                print("매수 가능한 잔고가 부족합니다.")
- 
+        line_alert.SendMessage("Bithumb 30분봉 매수신호 발생")
+        # 잔고 확인 로직 추가
+        if won["free"] > (order_price * 0.01) * 1.0004:  # 매수 가능한 잔고가 있는지 확인
+            print(f"매수 신호 (KST): 시간 {current_time}, 가격 {order_price}")
+        # 매수 주문 로직
+            buy_quantity = 0.01  # 매수 수량 (예시 값)#####################################################
+            
+            bithumb.create_market_buy_order(ticker, buy_quantity)     
+            
+        else:
+            print("매수 가능한 잔고가 부족합니다.")
+
         
     elif last_signal == -1:  # 매도 신호가 발생한 경우
+        line_alert.SendMessage("Bithumb 30분봉 매도신호 발생")
         if total_buy_quantity > 0:    
             print(f"매도 신호 (KST): 시간 {current_time}, 가격 {order_price}")
             sell_quantity = 0.01  # 매도 수량 (예시 값)#####################################################
@@ -249,3 +253,4 @@ print("-------------------------------------------------------------------------
 
 print(ticker, "현재잔고 :", base_currency_balance)
 
+print(signals)
