@@ -160,6 +160,7 @@ rsi_now = get_rsi(btc_data, 14, -2)
 base_currency = ticker.split('/')[0]  # 예: BTC/KRW에서 BTC를 얻음
 mybalance = mybithumb.get_balance(base_currency)
 balance = bithumb.fetch_balance()
+won_balance = mybithumb.get_balance("KRW")
 base_currency_balance = balance[base_currency]
 total_buy_quantity = base_currency_balance['free']
 won = balance["KRW"]
@@ -167,6 +168,7 @@ current_time = datetime.datetime.now(pytz.timezone('Asia/Seoul'))
 order_price = btc_data['close'].iloc[-1]
 
 print("---------------------------------------------------------------------")
+print(won_balance)
 print("계좌잔고조회 1 :", mybalance)
 print("계좌잔고조회 2 :", base_currency_balance)
 print(f"주문가능원화 : {won['free']:,.0f} 원")
@@ -187,7 +189,7 @@ print("-------------------------------------------------------------------------
 
 # 주문 실행
    
-if macd_now < macd_s_now and macd_before3 > macd_before2 and macd_before2 < macd_now:
+if rsi_before2 < 40 and macd_before2 < macd_s_before2 and macd_before3 > macd_before2 and macd_before2 < macd_now:
         
     # 잔고 확인 로직 추가
     if won["free"] > (order_price * 0.004) * 1.0004:  # 매수 가능한 잔고가 있는지 확인
@@ -200,8 +202,20 @@ if macd_now < macd_s_now and macd_before3 > macd_before2 and macd_before2 < macd
     else:
         print("매수 가능한 잔고가 부족합니다.")
 
+if rsi_before2 <= 30 and rsi_now > 30:
         
-elif macd_now > macd_s_now and macd_before3 < macd_before2 and macd_before2 > macd_now:
+    # 잔고 확인 로직 추가
+    if won["free"] > (order_price * 0.004) * 1.0004:  # 매수 가능한 잔고가 있는지 확인
+        print(f"매수 신호 (KST): 시간 {current_time}, 가격 {order_price}")
+    # 매수 주문 로직
+        buy_quantity = 0.004  # 매수 수량 ###################################################
+        bithumb.create_market_buy_order(ticker, buy_quantity)
+        line_alert.SendMessage("Bithumb 5분봉 매수신호 0.004 btc 매수")     
+        
+    else:
+        print("매수 가능한 잔고가 부족합니다.")
+        
+elif rsi_before2 > 60 and macd_before2 > macd_s_before2 and macd_before3 < macd_before2 and macd_before2 > macd_now:
     sell_quantity = 0.004  # 매도 수량 (예시 값)#################################################
     if total_buy_quantity >= sell_quantity:        
         print(f"매도 신호 (KST): 시간 {current_time}, 가격 {order_price}")
@@ -212,6 +226,18 @@ elif macd_now > macd_s_now and macd_before3 < macd_before2 and macd_before2 > ma
     else:
         bithumb.create_market_sell_order(ticker, total_buy_quantity)
         line_alert.SendMessage("Bithumb 5분봉 매도신호 잔량 전액 매도")
+
+elif rsi_before2 >= 70 and rsi_now < 70:
+    sell_quantity = 0.004  # 매도 수량 (예시 값)#################################################
+    if total_buy_quantity >= sell_quantity:        
+        print(f"매도 신호 (KST): 시간 {current_time}, 가격 {order_price}")
+                                            
+        bithumb.create_market_sell_order(ticker, sell_quantity)
+        line_alert.SendMessage("Bithumb 5분봉 매도신호 0.004 btc 매도")
+
+    else:
+        bithumb.create_market_sell_order(ticker, total_buy_quantity)
+        line_alert.SendMessage("Bithumb 5분봉 매도신호 잔량 전액 매도")        
                         
 else:
     print("매매가 이루어지지 않았습니다.")
