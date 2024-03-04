@@ -3,7 +3,11 @@
 # print("hello world")
 # print("=" * 10)
 
-a = "Life is short"
-print(a[3])
-print(len(a))
-print(a[0:4])
+# s1 = {1, 2, 3, 4, 5}
+# s2 = {4, 5, 6, 7, 8}
+# print(s1 | s2)
+# s1.add("집합")
+# print(s1)
+
+
+
