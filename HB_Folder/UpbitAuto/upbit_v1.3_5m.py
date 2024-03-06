@@ -39,7 +39,7 @@ FirstEnterMoney = CoinMaxMoney / 100.0 * FirstRate
 # 2차 매수 금액 
 WaterEnterMoeny = CoinMaxMoney / 100.0 * WaterRate
 
-print("2024-03-01 updated version")
+print("2024-03-06 updated version")
 print("-----------------------------------------------")
 print (f"Total Money : {myUpbit.GetTotalMoney(balances):,.0f}")
 print (f"Total Real Money : {myUpbit.GetTotalRealMoney(balances):,.0f}")
@@ -96,7 +96,7 @@ for ticker in Tickers:
     
             
         ### MACD 하락전환 시 2% 이상 수익권일 때 분할 매도 ###
-            if rsi5_min_before>60 and macd_before2 > macd_s_before2 and macd_before3 < macd_before2 and macd_before2 > macd_now and revenu_rate >= 1.5:
+            if rsi5_min_before>60 and macd_before2 > macd_s_before2 and macd_before3 < macd_before2 and macd_before2 > macd_now and revenu_rate >= 3.0:
                 print("!!!!!!!!!!!!!!! Revenue Success Sell Coin! !!!!!!!!!!!!!!!!!!!")
 
                 # 현재 걸려있는 지정가 주문을 취소한다.
@@ -118,7 +118,7 @@ for ticker in Tickers:
                 won = float(upbit.get_balance("KRW"))
 
 
-            if rsi5_min_before >= 70 and rsi5_min<70 and revenu_rate >= 1.5:
+            if rsi5_min_before >= 70 and rsi5_min<70 and revenu_rate >= 3.0:
                 print("!!!!!!!!!!!!!!! Revenue Success Sell Coin! !!!!!!!!!!!!!!!!!!!")
 
                 # 현재 걸려있는 지정가 주문을 취소한다.

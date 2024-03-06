@@ -95,7 +95,7 @@ for ticker in Tickers:
     
             
         ### MACD 하락전환 시 수익권일 때 분할 매도 ###
-            if macd_now > macd_s_now and macd_before3 < macd_before2 and macd_before2 > macd_now and revenu_rate >= 2.0:
+            if macd_now > macd_s_now and macd_before3 < macd_before2 and macd_before2 > macd_now and revenu_rate >= 4.0:
                 print("!!!!!!!!!!!!!!! Revenue Success Sell Coin! !!!!!!!!!!!!!!!!!!!")
 
                 # 현재 걸려있는 지정가 주문을 취소한다.

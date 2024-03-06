@@ -58,6 +58,9 @@ for ticker in Tickers:
     ##### 보유 중인 코인 ####################################################################
         
         if myUpbit.IsHasCoin(balances,ticker) == True:
+            #관심종목 이외의 코인은 스킵
+            if myUpbit.CheckCoinInList(LovelyCoinList,ticker) == False:
+                continue
             
             print("-----------------------------------------------")
             print("##### Having Coin :",ticker)
@@ -96,7 +99,7 @@ for ticker in Tickers:
     
             
         ### MACD 하락전환 시 2% 이상 수익권일 때 분할 매도 ###
-            if rsi15_min_before>60 and macd_before2 > macd_s_before2 and macd_before3 < macd_before2 and macd_before2 > macd_now and revenu_rate >= 1.5:
+            if rsi15_min_before>60 and macd_before2 > macd_s_before2 and macd_before3 < macd_before2 and macd_before2 > macd_now and revenu_rate >= 3.0:
                 print("!!!!!!!!!!!!!!! Revenue Success Sell Coin! !!!!!!!!!!!!!!!!!!!")
 
                 # 현재 걸려있는 지정가 주문을 취소한다.
@@ -118,7 +121,7 @@ for ticker in Tickers:
                 won = float(upbit.get_balance("KRW"))
 
 
-            if rsi15_min_before >= 70 and rsi15_min<70 and revenu_rate >= 1.5:
+            if rsi15_min_before >= 70 and rsi15_min<70 and revenu_rate >= 3.0:
                 print("!!!!!!!!!!!!!!! Revenue Success Sell Coin! !!!!!!!!!!!!!!!!!!!")
 
                 # 현재 걸려있는 지정가 주문을 취소한다.
