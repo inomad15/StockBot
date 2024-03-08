@@ -66,7 +66,7 @@ for ticker in Tickers:
             print("##### Having Coin :",ticker)
 
             time.sleep(0.05)
-            df15 = pyupbit.get_ohlcv(ticker,interval="minute15") #5분봉 데이타를 가져온다.
+            df15 = pyupbit.get_ohlcv(ticker,interval="minute15") #15분봉 데이타를 가져온다.
             
             # RSI지표
             rsi15_min_before = myUpbit.GetRSI(df15,14,-3)
@@ -109,13 +109,13 @@ for ticker in Tickers:
                 if NowCoinTotalMoney < FirstEnterMoney:
                     #시장가 매도를 한다.
                     balances = myUpbit.SellCoinMarket(upbit,ticker,coinamount)
-                    line_alert.SendMessage(f"업비트 5분봉 MACD 하락전환 {ticker} 전액 매도")
+                    line_alert.SendMessage(f"업비트 15분봉 MACD 하락전환 {ticker} 전액 매도")
                 
                 # 1회 매구금애 보다 크다면 보유액의 25% 씩 분할매도
                 else:
                     #시장가 매도를 한다.
                     balances = myUpbit.SellCoinMarket(upbit,ticker,coinamount/10)
-                    line_alert.SendMessage(f"업비트 5분봉 MACD 하락전환 {ticker} 일부 매도")
+                    line_alert.SendMessage(f"업비트 15분봉 MACD 하락전환 {ticker} 일부 매도")
 
                 #팔았으면 원화를 다시 가져올 필요가 있다.
                 won = float(upbit.get_balance("KRW"))
@@ -131,13 +131,13 @@ for ticker in Tickers:
                 if NowCoinTotalMoney < FirstEnterMoney:
                     #시장가 매도를 한다.
                     balances = myUpbit.SellCoinMarket(upbit,ticker,coinamount)
-                    line_alert.SendMessage(f"업비트 5분봉 MACD 하락전환 {ticker} 전액 매도")
+                    line_alert.SendMessage(f"업비트 15분봉 MACD 하락전환 {ticker} 전액 매도")
                 
                 # 1회 매구금액 보다 크다면 보유금액의 25% 시장가 매도 
                 else:
                     #시장가 매도를 한다.
                     balances = myUpbit.SellCoinMarket(upbit,ticker,coinamount/4)
-                    line_alert.SendMessage(f"업비트 5분봉 MACD 하락전환 {ticker} 일부 매도")
+                    line_alert.SendMessage(f"업비트 15분봉 MACD 하락전환 {ticker} 일부 매도")
 
                 #팔았으면 원화를 다시 가져올 필요가 있다.
                 won = float(upbit.get_balance("KRW"))    
@@ -163,7 +163,7 @@ for ticker in Tickers:
                 print("!!!!!!!!!!!!!! ADD Buy GoGoGo !!!!!!!!!!!!!!!!!!!!!!!")
                  #시장가 매수를 한다.
                 balances = myUpbit.BuyCoinMarket(upbit,ticker,FirstEnterMoney)
-                line_alert.SendMessage(f"업비트 5분봉 RSI 상승전환 {ticker} 추가매수")
+                line_alert.SendMessage(f"업비트 15분봉 RSI 상승전환 {ticker} 추가매수")
 
             time.sleep(0.05)
 
@@ -182,7 +182,7 @@ for ticker in Tickers:
                 print("!!!!!!!!!!!!!! DANTA DANTA ADD Buy GoGoGo !!!!!!!!!!!!!!!!!!!!!!!")
                 #시장가 매수를 한다.
                 balances = myUpbit.BuyCoinMarket(upbit,ticker,FirstEnterMoney)
-                line_alert.SendMessage(f"업비트 5분봉 MACD 상승전환 {ticker} 추가매수")
+                line_alert.SendMessage(f"업비트 15분봉 MACD 상승전환 {ticker} 추가매수")
 
             
         #     #5분봉 기준 5일선 값을 구한다.
@@ -230,7 +230,7 @@ for ticker in Tickers:
                 print("!!!!!!!!!!!!!! First Buy GoGoGo !!!!!!!!!!!!!!!!!!!!!!!")
                  #시장가 매수를 한다.
                 balances = myUpbit.BuyCoinMarket(upbit,ticker,FirstEnterMoney)
-                line_alert.SendMessage(f"업비트 5분봉 RSI 상승전환 {ticker} 신규매수")
+                line_alert.SendMessage(f"업비트 15분봉 RSI 상승전환 {ticker} 신규매수")
 
 
             time.sleep(0.05)
@@ -249,7 +249,7 @@ for ticker in Tickers:
                 print("!!!!!!!!!!!!!! DANTA DANTA First Buy GoGoGo !!!!!!!!!!!!!!!!!!!!!!!")
                 #시장가 매수를 한다.
                 balances = myUpbit.BuyCoinMarket(upbit,ticker,FirstEnterMoney)
-                line_alert.SendMessage(f"업비트 5분봉 MACD 상승전환 {ticker} 신규매수")
+                line_alert.SendMessage(f"업비트 15분봉 MACD 상승전환 {ticker} 신규매수")
             
             
         #     #5분봉 기준 5일선 값을 구한다.
