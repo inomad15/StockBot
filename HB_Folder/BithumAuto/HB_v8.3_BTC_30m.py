@@ -193,36 +193,46 @@ print("-------------------------------------------------------------------------
 # 주문 실행
    
 if rsi_before2 < 40 and macd_before2 < macd_s_before2 and macd_before3 > macd_before2 and macd_before2 < macd_now:
-        
+    
+    print(f"매수 신호 (KST): 시간 {current_time}, 가격 {order_price}")    
+    line_alert.SendMessage("Bithumb 30분봉 MACD 상승반전 매수신호")
+    
     # 잔고 확인 로직 추가
     if won["free"] > (order_price * 0.004) * 1.0004:  # 매수 가능한 잔고가 있는지 확인
-        print(f"매수 신호 (KST): 시간 {current_time}, 가격 {order_price}")
+        
     # 매수 주문 로직
         buy_quantity = 0.004  # 매수 수량 ###################################################
         bithumb.create_market_buy_order(ticker, buy_quantity)
-        line_alert.SendMessage("Bithumb 30분봉 MACD 상승반전 매매")
-
+        
         time.sleep(10)
         bithumb.create_limit_sell_order(ticker, buy_quantity, reserve_price)
         
+        line_alert.SendMessage("Bithumb BTC 0.04 매수와 매도 주문")
+        
     else:
         print("매수 가능한 잔고가 부족합니다.")
+        line_alert.SendMessage("매수 가능 잔고 부족")
 
 elif rsi_before2 <= 30 and rsi_now > 30:
-        
+    
+    print(f"매수 신호 (KST): 시간 {current_time}, 가격 {order_price}")
+    line_alert.SendMessage("Bithumb 30분봉 RSI 상승반전 매수신호")    
+    
     # 잔고 확인 로직 추가
     if won["free"] > (order_price * 0.004) * 1.0004:  # 매수 가능한 잔고가 있는지 확인
         print(f"매수 신호 (KST): 시간 {current_time}, 가격 {order_price}")
     # 매수 주문 로직
         buy_quantity = 0.004  # 매수 수량 ###################################################
         bithumb.create_market_buy_order(ticker, buy_quantity)
-        line_alert.SendMessage("Bithumb 30분봉 RSI 상승반전 매매")
-
+        
         time.sleep(10)
-        bithumb.create_limit_sell_order(ticker, buy_quantity, reserve_price)     
+        bithumb.create_limit_sell_order(ticker, buy_quantity, reserve_price)
+        
+        line_alert.SendMessage("Bithumb BTC 0.04 매수와 매도 주문")     
         
     else:
         print("매수 가능한 잔고가 부족합니다.")
+        line_alert.SendMessage("매수 가능 잔고 부족")
         
 
 # elif rsi_before2 > 60 and macd_before2 > macd_s_before2 and macd_before3 < macd_before2 and macd_before2 > macd_now:
