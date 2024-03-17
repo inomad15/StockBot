@@ -115,7 +115,7 @@ for ticker in Tickers:
             text_contents = f"{ticker} \n매수금액 : {NowCoinTotalMoney:,.0f} \n평가금액: {now_eval_money:,.0f} \n수익률 : {revenu_rate:.2f}"
             asyncio.run(send_telegram_message())
             
-            text_contents = f"MACD : {macd_before3:,.0f} -> {macd_before2:,.0f} -> {macd_now:,.0f}\nMACD_signal : {macd_s_now:,.0f} \nRSI : {rsi30_min_before:.0f} -> {rsi30_min:.0f}"
+            text_contents = f"현재가 : {now_price:,.0f} \nMACD : {macd_before3:,.0f} -> {macd_before2:,.0f} -> {macd_now:,.0f}\nMACD_signal : {macd_s_now:,.0f} \nRSI : {rsi30_min_before:.0f} -> {rsi30_min:.0f}"
             asyncio.run(send_telegram_message())
             
         ### MACD 하락전환 시 수익권일 때 분할 매도 ###
