@@ -200,7 +200,7 @@ for ticker in Tickers:
             print(f"macd : {macd_before3:,.0f} -> {macd_before2:,.0f} -> {macd_now:,.0f}")
 
         ### MACD 상승전환 시 추가매수 ###
-            if macd_s_before2 < 0 and macd_now < macd_s_now and macd_before3 > macd_before2 and macd_before2 < macd_now and myUpbit.GetHasCoinCnt(balances) <= MaxCoinCnt :
+            if rsi30_min_before < 40 and macd_now < macd_s_now and macd_before3 > macd_before2 and macd_before2 < macd_now and myUpbit.GetHasCoinCnt(balances) <= MaxCoinCnt :
                 print("!!!!!!!!!!!!!! DANTA DANTA ADD Buy GoGoGo !!!!!!!!!!!!!!!!!!!!!!!")
                 #시장가 매수를 한다.
                 balances = myUpbit.BuyCoinMarket(upbit,ticker,FirstEnterMoney)
@@ -267,7 +267,7 @@ for ticker in Tickers:
             print(f"macd : {macd_before3:,.0f} -> {macd_before2:,.0f} -> {macd_now:,.0f}")
 
         ### MACD 상승전환 시 신규매수 ###
-            if macd_s_before2 < 0 and macd_now < macd_s_now and macd_before3 > macd_before2 and macd_before2 < macd_now and myUpbit.GetHasCoinCnt(balances) < MaxCoinCnt :
+            if rsi30_min_before < 40 and macd_now < macd_s_now and macd_before3 > macd_before2 and macd_before2 < macd_now and myUpbit.GetHasCoinCnt(balances) < MaxCoinCnt :
                 print("!!!!!!!!!!!!!! DANTA DANTA First Buy GoGoGo !!!!!!!!!!!!!!!!!!!!!!!")
                 #시장가 매수를 한다.
                 balances = myUpbit.BuyCoinMarket(upbit,ticker,FirstEnterMoney)
